@@ -11,6 +11,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="styles.css" />
+    <script src="https://unpkg.com/lenis@1.1.18/dist/lenis.min.js"></script>
     <script defer src="main.js"></script>
   </head>
   <body>
@@ -85,27 +86,36 @@
         <div class="container">
           <h2 class="section__title" data-i18n="section_about">Обо мне</h2>
           <div class="about-card">
-            <div class="lang-block" data-lang="ru">
-              <p class="section__text">
-                Меня зовут Азим. Мне 20 лет, и последние два года я активно изучаю 
-                фронтенд-разработку. Мне нравится создавать минималистичные, чистые 
-                интерфейсы с фокусом на пользовательский опыт.
-              </p>
-              <p class="section__text" style="margin-top: 16px;">
-                Сейчас развиваю навыки в React и современных UI-библиотеках. 
-                Открыт к новым проектам и сотрудничеству.
-              </p>
-            </div>
-            <div class="lang-block" data-lang="uz">
-              <p class="section__text">
-                Mening ismim Azim. 20 yoshdaman va oxirgi ikki yil davomida 
-                frontend-dasturlashni faol o'rganaman. Foydalanuvchi tajribasiga 
-                e'tibor qaratgan minimalistik, toza interfeyslar yaratishni yoqtiraman.
-              </p>
-              <p class="section__text" style="margin-top: 16px;">
-                Hozir React va zamonaviy UI kutubxonalari bo'yicha ko'nikmalarimni 
-                rivojlantiryapman. Yangi loyihalar va hamkorlikka ochiqman.
-              </p>
+            <div class="about-content">
+              <div class="about-text">
+                <div class="lang-block" data-lang="ru">
+                  <p class="section__text">
+                    Меня зовут Азим. Мне 20 лет, и последние два года я активно изучаю 
+                    фронтенд-разработку. Мне нравится создавать минималистичные, чистые 
+                    интерфейсы с фокусом на пользовательский опыт.
+                  </p>
+                  <p class="section__text" style="margin-top: 16px;">
+                    Сейчас развиваю навыки в React и современных UI-библиотеках. 
+                    Открыт к новым проектам и сотрудничеству.
+                  </p>
+                </div>
+                <div class="lang-block" data-lang="uz">
+                  <p class="section__text">
+                    Mening ismim Azim. 20 yoshdaman va oxirgi ikki yil davomida 
+                    frontend-dasturlashni faol o'rganaman. Foydalanuvchi tajribasiga 
+                    e'tibor qaratgan minimalistik, toza interfeyslar yaratishni yoqtiraman.
+                  </p>
+                  <p class="section__text" style="margin-top: 16px;">
+                    Hozir React va zamonaviy UI kutubxonalari bo'yicha ko'nikmalarimni 
+                    rivojlantiryapman. Yangi loyihalar va hamkorlikka ochiqman.
+                  </p>
+                </div>
+              </div>
+              <div class="about-video">
+                <video autoplay loop muted playsinline>
+                  <source src="comic-woman-choosing-what-button-to-push.webm" type="video/webm">
+                </video>
+              </div>
             </div>
           </div>
         </div>

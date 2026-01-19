@@ -1,3 +1,21 @@
+// Lenis smooth scroll
+const lenis = new Lenis({
+  duration: 1.2,
+  easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+  orientation: 'vertical',
+  gestureOrientation: 'vertical',
+  smoothWheel: true,
+  wheelMultiplier: 0.8,
+  touchMultiplier: 1.5,
+  infinite: false,
+});
+
+function raf(time) {
+  lenis.raf(time);
+  requestAnimationFrame(raf);
+}
+requestAnimationFrame(raf);
+
 const translations = {
 	ru: {
 		nav_about: "Обо мне",
@@ -80,4 +98,39 @@ window.addEventListener("resize", updateProgress);
 
 setLanguage("ru");
 updateProgress();
+
+// Trailing cursor effect
+const createParticle = (x, y) => {
+  const particle = document.createElement('div');
+  particle.className = 'cursor-particle';
+  const size = Math.random() * 8 + 4;
+  particle.style.width = `${size}px`;
+  particle.style.height = `${size}px`;
+  particle.style.left = `${x}px`;
+  particle.style.top = `${y}px`;
+  document.body.appendChild(particle);
+  
+  setTimeout(() => particle.remove(), 600);
+};
+
+let lastX = 0;
+let lastY = 0;
+let throttle = false;
+
+document.addEventListener('mousemove', (e) => {
+  if (throttle) return;
+  throttle = true;
+  
+  const dx = e.clientX - lastX;
+  const dy = e.clientY - lastY;
+  const distance = Math.sqrt(dx * dx + dy * dy);
+  
+  if (distance > 10) {
+    createParticle(e.clientX, e.clientY);
+    lastX = e.clientX;
+    lastY = e.clientY;
+  }
+  
+  setTimeout(() => throttle = false, 30);
+});
 
