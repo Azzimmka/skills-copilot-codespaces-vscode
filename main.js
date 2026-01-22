@@ -19,6 +19,7 @@ requestAnimationFrame(raf);
 const translations = {
 	ru: {
 		nav_about: "Обо мне",
+		nav_projects: "Проекты",
 		nav_skills: "Навыки",
 		nav_contact: "Контакты",
 		hero_greeting: "Привет, меня зовут",
@@ -40,7 +41,8 @@ const translations = {
 	},
 	uz: {
 		nav_about: "Men haqimda",
-		nav_skills: "Ko‘nikmalar",
+		nav_projects: "Loyihalar",
+		nav_skills: "Ko'nikmalar",
 		nav_contact: "Kontaktlar",
 		hero_greeting: "Salom, mening ismim",
 		hero_name: "Azim",
@@ -94,6 +96,23 @@ langButtons.forEach((btn) => {
 	btn.addEventListener("click", () => {
 		const lang = btn.dataset.langBtn;
 		setLanguage(lang);
+	});
+});
+
+// Плавный скролл для навигационных ссылок
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+	anchor.addEventListener('click', (e) => {
+		const href = anchor.getAttribute('href');
+		if (href === '#') return;
+		
+		const target = document.querySelector(href);
+		if (target) {
+			e.preventDefault();
+			lenis.scrollTo(target, {
+				offset: -80, // отступ от верха (высота header)
+				duration: 1.2
+			});
+		}
 	});
 });
 
@@ -163,7 +182,7 @@ document.addEventListener('mousemove', (e) => {
 });
 
 
-// Contact Modal - появляется через 10 секунд
+// Contact Modal - появляется через 6 секунд
 const contactModal = document.getElementById('contactModal');
 const modalClose = document.getElementById('modalClose');
 const modalBackdrop = contactModal?.querySelector('.modal__backdrop');
@@ -180,8 +199,8 @@ const hideModal = () => {
 	document.body.style.overflow = '';
 };
 
-// Всегда показываем модалку через 10 секунд
-setTimeout(showModal, 10000);
+// Всегда показываем модалку через 6 секунд
+setTimeout(showModal, 5000);
 
 // Закрытие по кнопке
 modalClose?.addEventListener('click', hideModal);

@@ -58,7 +58,8 @@
 
 body {
   margin: 0;
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: 'Outfit', sans-serif;
+  letter-spacing: 0.7px;
   color: var(--text);
   background: var(--bg);
   line-height: 1.7;
@@ -309,8 +310,8 @@ button {
 }
 
 .hero__doodle {
-  width: 120px;
-  height: 120px;
+  width: 160px;
+  height: 160px;
   flex-shrink: 0;
 }
 
@@ -358,15 +359,15 @@ button {
   }
 
   .hero__doodle {
-    width: 80px;
-    height: 80px;
+    width: 120px;
+    height: 120px;
   }
 }
 
 @media (max-width: 480px) {
   .hero__doodle {
-    width: 60px;
-    height: 60px;
+    width: 90px;
+    height: 90px;
   }
 
   .hero__visual {
@@ -873,7 +874,7 @@ button {
   padding: 20px;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.5s ease, visibility 0.5s ease;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
 .modal.is-active {
@@ -884,15 +885,7 @@ button {
 .modal__backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.modal.is-active .modal__backdrop {
-  opacity: 1;
+  background: linear-gradient(105deg, rgba(0, 0, 0, 0.7) 0%, rgba(20, 20, 20, 0.8) 100%);
 }
 
 .modal__container {
@@ -903,9 +896,9 @@ button {
   max-width: 420px;
   width: 100%;
   overflow: hidden;
-  transform: scale(0.95) translateY(20px);
+  transform: scale(0.95) translateY(10px);
   opacity: 0;
-  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.3s ease, opacity 0.3s ease;
 }
 
 .modal.is-active .modal__container {
