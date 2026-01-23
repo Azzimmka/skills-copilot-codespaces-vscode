@@ -360,59 +360,16 @@ const typeWriter = (element, text, speed = 20) => {
 	});
 };
 
-chatForm?.addEventListener('submit', async (e) => {
-	e.preventDefault();
-	const message = chatInput.value.trim();
+// Unified Send Message Logic
+const sendMessage = async (text) => {
 	if (chatForm.dataset.loading === 'true') return;
 	chatForm.dataset.loading = 'true';
 
-	appendMessage('user', message);
-	chatInput.value = '';
-	chatHistory.push({ role: 'user', content: message });
-	saveChat();
-
-	showTyping();
-
-	try {
-		const response = await fetch('/api/chat', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ messages: chatHistory })
-		});
-
-		const data = await response.json();
-		hideTyping();
-		chatForm.dataset.loading = 'false';
-
-		if (data.choices && data.choices[0]) {
-			let aiMessage = data.choices[0].message.content;
-			aiMessage = aiMessage.replace(/[\*#_\[\]]/g, '').trim();
-
-			const bubble = document.createElement('div');
-			bubble.className = 'chat-bubble chat-bubble--ai';
-			chatMessages.appendChild(bubble);
-			await typeWriter(bubble, aiMessage);
-
-			chatHistory.push({ role: 'assistant', content: aiMessage });
-			saveChat();
-		} else {
-			appendMessage('ai', 'Извини, произошла ошибка подключения к ИИ.');
-		}
-	} catch (error) {
-		hideTyping();
-		appendMessage('ai', 'Ошибка: не удалось связаться с сервером.');
-		console.error('Chat Error:', error);
-	}
-});
-
-// Handle Chat Suggestions
-const chatSuggestions = document.getElementById('chatSuggestions');
-
-const sendAutoMessage = async (text) => {
-	if (chatForm.dataset.loading === 'true') return;
-	chatForm.dataset.loading = 'true';
-
+	// Optimistic UI Update
 	appendMessage('user', text);
+	chatInput.value = '';
+
+	// Add to history
 	chatHistory.push({ role: 'user', content: text });
 	saveChat();
 	showTyping();
@@ -428,6 +385,11 @@ const sendAutoMessage = async (text) => {
 		hideTyping();
 		chatForm.dataset.loading = 'false';
 
+		// Handle API Error Gracefully
+		if (data.error) {
+			throw new Error(data.error);
+		}
+
 		if (data.choices && data.choices[0]) {
 			let aiMessage = data.choices[0].message.content;
 			aiMessage = aiMessage.replace(/[\*#_\[\]]/g, '').trim();
@@ -439,20 +401,35 @@ const sendAutoMessage = async (text) => {
 
 			chatHistory.push({ role: 'assistant', content: aiMessage });
 			saveChat();
+		} else {
+			throw new Error('No response content');
 		}
 	} catch (error) {
 		hideTyping();
 		chatForm.dataset.loading = 'false';
-		console.error('Auto Message Error:', error);
+		console.error('Chat Error:', error);
+
+		// ROLLBACK: Remove the failed user message so they can try again
+		chatHistory.pop();
+		saveChat();
+		appendMessage('ai', 'Ошибка: не удалось связаться с сервером. Попробуйте еще раз.');
 	}
 };
+
+chatForm?.addEventListener('submit', async (e) => {
+	e.preventDefault();
+	const message = chatInput.value.trim();
+	if (!message) return;
+	await sendMessage(message);
+});
+
+// Handle Chat Suggestions
+const chatSuggestions = document.getElementById('chatSuggestions');
 
 chatSuggestions?.addEventListener('click', (e) => {
 	if (e.target.classList.contains('chat-suggestion')) {
 		const text = e.target.textContent;
-		sendAutoMessage(text);
-		// Optionally hide suggestions after first click to save space
-		// chatSuggestions.style.display = 'none';
+		sendMessage(text);
 	}
 });
 

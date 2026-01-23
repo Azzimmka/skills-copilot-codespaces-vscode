@@ -84,26 +84,61 @@ app.post('/api/chat', chatLimiter, async (req, res) => {
     }
 
     try {
-        // Prepare and validate messages for Perplexity
-        const formattedMessages = messages
-            .filter(msg => msg.content && msg.content.trim() !== '') // Remove empty messages
-            .map(msg => ({
-                role: msg.role === 'ai' ? 'assistant' : msg.role,
-                content: msg.content.trim()
-            }));
+        // --- SENIOR LEVEL SANITIZATION ---
+        // Function to normalize messages: prevent role duplication and ensure valid sequence
+        const normalizeMessages = (msgs) => {
+            const cleaned = msgs
+                .filter(msg => msg.content && typeof msg.content === 'string' && msg.content.trim() !== '')
+                .map(msg => ({
+                    role: msg.role === 'ai' ? 'assistant' : msg.role,
+                    content: msg.content.trim()
+                }));
 
-        // Perplexity requires messages to alternate: user, assistant, user, assistant...
-        // If the last message is from 'assistant', Perplexity will throw an error.
-        if (formattedMessages.length > 0 && formattedMessages[formattedMessages.length - 1].role === 'assistant') {
-            console.log('Skipping API call: last message is already from assistant');
-            return res.json({ choices: [{ message: { content: messages[messages.length - 1].content } }] });
+            if (cleaned.length === 0) return [];
+
+            const normalized = [];
+            // Merge consecutive messages from the same role
+            let lastMsg = cleaned[0];
+
+            for (let i = 1; i < cleaned.length; i++) {
+                const current = cleaned[i];
+                if (current.role === lastMsg.role) {
+                    // Merge content if same role
+                    lastMsg.content += `\n\n${current.content}`;
+                } else {
+                    normalized.push(lastMsg);
+                    lastMsg = current;
+                }
+            }
+            normalized.push(lastMsg);
+
+            return normalized;
+        };
+
+        const validMessages = normalizeMessages(messages);
+
+        // Perplexity SPECIFIC Validation:
+        // 1. Must not be empty.
+        // 2. Last message must be 'user' (AI cannot reply to itself).
+        if (validMessages.length === 0) {
+            return res.status(400).json({ error: 'No valid messages found' });
+        }
+
+        if (validMessages[validMessages.length - 1].role === 'assistant') {
+            // Safe fallback: Drop the lastAI message so the user can continue, 
+            // OR return a specific error. For a robust chat, we just ignore the last AI message
+            // so the context is still valid for the *previous* user message, 
+            // BUT logically, we need a refined prompt. 
+            // Better approach: reject with clear error so client syncs up.
+            console.warn('Validation Failed: Last message is assistant.');
+            return res.json({ choices: [{ message: { content: "System: Waiting for user input..." } }] });
         }
 
         const response = await axios.post('https://api.perplexity.ai/chat/completions', {
             model: 'sonar',
             messages: [
                 { role: 'system', content: AZIM_SYSTEM_PROMPT },
-                ...formattedMessages
+                ...validMessages
             ],
             temperature: 0.7,
         }, {
