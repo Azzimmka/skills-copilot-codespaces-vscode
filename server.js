@@ -8,6 +8,9 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Need this for express-rate-limit to work behind Digital Ocean proxy
+app.set('trust proxy', 1);
+
 // Настройка защиты: макс 15 запросов за 15 минут с одного IP
 const chatLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
