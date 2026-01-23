@@ -307,18 +307,22 @@ button {
   align-items: center;
   justify-content: center;
   gap: 24px;
+  max-width: 100%;
 }
 
 .hero__doodle {
-  width: 160px;
-  height: 160px;
+  width: clamp(80px, 20vw, 160px);
+  height: auto;
+  aspect-ratio: 1/1;
   flex-shrink: 0;
 }
 
-.hero__doodle video {
+.hero__doodle video,
+.hero__doodle img {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  display: block;
 }
 
 .hero__doodle--left {
@@ -359,19 +363,19 @@ button {
   }
 
   .hero__doodle {
-    width: 120px;
-    height: 120px;
+    width: 100px;
+    height: auto;
   }
 }
 
 @media (max-width: 480px) {
   .hero__doodle {
-    width: 90px;
-    height: 90px;
+    width: 80px;
+    height: auto;
   }
 
   .hero__visual {
-    gap: 12px;
+    gap: 8px;
   }
 }
 
@@ -1041,29 +1045,56 @@ button {
   font-family: 'Outfit', sans-serif;
 }
 
+/* AI Chat Toggle - Premium Style */
 .chat-toggle {
-  width: 56px;
-  height: 56px;
+  width: 68px;
+  height: 68px;
   border-radius: 50%;
-  background: var(--text);
-  color: var(--bg);
-  border: none;
+  background: rgba(23, 23, 23, 0.8);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  transition: transform 0.3s ease, background 0.3s ease, opacity 0.3s ease;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.2),
+    inset 0 0 10px rgba(255, 255, 255, 0.05);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  overflow: hidden;
+  animation: float-widget 4s ease-in-out infinite;
+  margin: 10px;
+}
+
+@keyframes float-widget {
+
+  0%,
+  100% {
+    transform: translateY(0) rotate(0);
+  }
+
+  50% {
+    transform: translateY(-8px) rotate(2deg);
+  }
 }
 
 .chat-toggle:hover {
-  transform: scale(1.05);
-  background: #333;
+  transform: scale(1.1);
+  background: var(--text);
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 15px 45px rgba(0, 0, 0, 0.3);
 }
 
-.chat-toggle__icon {
-  width: 24px;
-  height: 24px;
+.chat-toggle img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.chat-toggle:hover img {
+  transform: scale(1.15) rotate(-5deg);
 }
 
 .chat-window {
@@ -1278,35 +1309,35 @@ button {
 
 @media (max-width: 480px) {
   .chat-window {
-    width: 100vw;
-    height: 100vh;
-    height: -webkit-fill-available;
-    bottom: 0;
-    right: 0;
-    border-radius: 0;
-    position: fixed;
-    z-index: 10001;
+    width: 100% !important;
+    height: 100dvh !important;
+    /* Dynamic height to handle keyboard */
+    top: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    border-radius: 0 !important;
+    position: fixed !important;
+    z-index: 10001 !important;
+    transform: none !important;
+    /* Remove any translation that could push it up */
   }
-}
 
-/* Additional Mobile UX Polish */
-@media (max-width: 480px) {
+  /* Force header to stick to top in the flex container */
   .chat-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    flex-shrink: 0;
     border-radius: 0;
-    padding: 24px 16px;
-  }
-
-  .chat-close {
-    width: 44px;
-    height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    padding: 16px 16px 12px;
+    background: white;
+    /* Solid background to cover scrolled content */
   }
 
   .chat-widget {
-    bottom: 20px;
-    right: 20px;
+    bottom: 0 !important;
+    right: 0 !important;
   }
 }
 
@@ -1386,6 +1417,35 @@ button {
   font-weight: 500;
   cursor: pointer;
   transition: transform 0.2s ease;
+}
+
+/* AI Chat Toggle Tooltip */
+.chat-widget::before {
+  content: "Virtual Azim";
+  position: absolute;
+  right: 80px;
+  bottom: 14px;
+  background: var(--text);
+  color: var(--bg);
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateX(10px);
+  transition: all 0.3s ease;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.chat-widget:hover::before {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.chat-toggle {
+  z-index: 1000;
 }
 
 .onboarding-btn:hover {
@@ -1521,51 +1581,3 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.chat-header__btn:hover {
-  background: rgba(0, 0, 0, 0.1);
-  color: var(--text);
-  transform: scale(1.1);
-}
-
-.chat-header__btn svg {
-  width: 18px;
-  height: 18px;
-}
-
-.is-blurred main,
-.is-blurred .header,
-.is-blurred .footer {
-  filter: blur(10px);
-  pointer-events: none;
-  transition: filter 0.6s ease;
-}
-
-/* Final UI Polish for Visibility */
-.chat-header__btn {
-  color: #171717 !important;
-  /* Force dark color */
-  opacity: 0.5;
-}
-
-.chat-header__btn:hover {
-  opacity: 1;
-  background: rgba(0, 0, 0, 0.05) !important;
-}
-
-.chat-close {
-  color: #171717 !important;
-  opacity: 0.5;
-}
-
-.chat-close:hover {
-  opacity: 1;
-}
-
-/* Ensure Toggle is always on top during focus */
-.chat-toggle {
-  z-index: 10002 !important;
-  width: 80px;
-  height: 80px;
-}

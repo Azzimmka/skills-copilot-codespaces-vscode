@@ -248,6 +248,7 @@ document.addEventListener('keydown', (e) => {
 const chatToggle = document.getElementById('chatToggle');
 const chatWindow = document.getElementById('chatWindow');
 const chatClose = document.getElementById('chatClose');
+const chatClear = document.getElementById('chatClear'); // Clear button
 const chatExpand = document.getElementById('chatExpand'); // New expand button
 const chatForm = document.getElementById('chatForm');
 const chatInput = document.getElementById('chatInput');
@@ -360,6 +361,18 @@ chatExpand?.addEventListener('click', (e) => {
 		// Maximize icon SVG
 		icon.innerHTML = '<path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />';
 	}
+});
+
+// Clear Chat Logic
+chatClear?.addEventListener('click', () => {
+	if (chatHistory.length === 0) return;
+
+	// Clear immediately without browser alert for better UX
+	chatHistory = [];
+	localStorage.removeItem('azim_chat_history');
+	const lang = document.documentElement.lang || 'ru';
+	const welcomeMsg = translations[lang]?.chat_welcome || "Привет!";
+	chatMessages.innerHTML = `<div class="chat-bubble chat-bubble--ai">${welcomeMsg}</div>`;
 });
 
 const typeWriter = (element, text, speed = 20) => {
