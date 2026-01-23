@@ -38,6 +38,15 @@ const translations = {
 		modal_title: "Есть идея? Давайте обсудим!",
 		modal_desc: "Напишите мне, и мы вместе воплотим вашу идею в жизнь",
 		modal_btn: "Написать в Telegram",
+		chat_online: "В сети",
+		chat_welcome: "Привет! Я виртуальный клон Азима. Спроси меня о чем угодно!",
+		chat_placeholder: "Ваше сообщение...",
+		suggest_1: "Расскажи о себе",
+		suggest_2: "Какие навыки?",
+		suggest_3: "Твои проекты",
+		onboarding_title: "Встречайте Виртуального Азима! 🤖",
+		onboarding_text: "Теперь вы можете пообщаться с моим ИИ-клоном. Он ответит на любые вопросы о моих проектах и навыках в реальном времени.",
+		onboarding_btn: "Понятно!",
 	},
 	uz: {
 		nav_about: "Men haqimda",
@@ -55,11 +64,21 @@ const translations = {
 		about_text_1: "Mening ismim Azim. 20 yoshdaman va oxirgi ikki yil davomida frontend-dasturlashni faol o'rganaman. Foydalanuvchi tajribasiga e'tibor qaratgan minimalistik, toza interfeyslar yaratishni yoqtiraman. ",
 		about_text_2: "Hozir React va zamonaviy UI kutubxonalari bo'yicha ko'nikmalarimni rivojlantiryapman. Yangi loyihalar va hamkorlikka ochiqman.",
 		section_contact: "Kontaktlar",
+		section_skills: "Ko'nikmalar",
 		contact_desc: "Loyihani muhokama qilmoqchimisiz yoki shunchaki gaplashmoqchimisiz? Men bilan qulay usulda bog'laning.",
 		footer_text: "© 2026 Azim. Mehr bilan yaratilgan.",
 		modal_title: "Fikringiz bormi? Keling, muhokama qilamiz!",
 		modal_desc: "Menga yozing va biz birgalikda g'oyangizni amalga oshiramiz",
 		modal_btn: "Telegramda yozish",
+		chat_online: "Onlayn",
+		chat_welcome: "Salom! Men Azimning virtual kloniman. Mendan loyihalar yoki ko'nikmalar haqida so'rang!",
+		chat_placeholder: "Xabaringзи yozing...",
+		suggest_1: "O'zing haqingda gapir",
+		suggest_2: "Qanday ko'nikmalar?",
+		suggest_3: "Sening loyihalaring",
+		onboarding_title: "Azimning Virtual Kloni bilan tanishing! 🤖",
+		onboarding_text: "Endi siz mening AI klonim bilan gaplashishingiz mumkin. U mening loyihalarim va ko'nikmalarim haqidagi har qanday savollarga real vaqt rejimida javob beradi.",
+		onboarding_btn: "Tushunarli!",
 	},
 };
 
@@ -89,6 +108,16 @@ const setLanguage = (lang) => {
 			}, 150);
 		}
 	});
+
+	// Handle placeholders
+	const placeholders = document.querySelectorAll("[data-i18n-placeholder]");
+	placeholders.forEach((el) => {
+		const key = el.dataset.i18nPlaceholder;
+		const value = translations[lang]?.[key];
+		if (value) {
+			el.placeholder = value;
+		}
+	});
 };
 
 
@@ -104,7 +133,7 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 	anchor.addEventListener('click', (e) => {
 		const href = anchor.getAttribute('href');
 		if (href === '#') return;
-		
+
 		const target = document.querySelector(href);
 		if (target) {
 			e.preventDefault();
@@ -187,8 +216,10 @@ const contactModal = document.getElementById('contactModal');
 const modalClose = document.getElementById('modalClose');
 const modalBackdrop = contactModal?.querySelector('.modal__backdrop');
 
+let chatWasOpened = false; // Флаг: открывал ли пользователь чат
+
 const showModal = () => {
-	if (!contactModal) return;
+	if (!contactModal || chatWasOpened) return; // Не показываем, если чат был открыт
 	contactModal.classList.add('is-active');
 	document.body.style.overflow = 'hidden';
 };
@@ -200,7 +231,7 @@ const hideModal = () => {
 };
 
 // Всегда показываем модалку через 6 секунд
-setTimeout(showModal, 5000);
+setTimeout(showModal, 7000);
 
 // Закрытие по кнопке
 modalClose?.addEventListener('click', hideModal);
@@ -211,4 +242,231 @@ modalBackdrop?.addEventListener('click', hideModal);
 // Закрытие по Escape
 document.addEventListener('keydown', (e) => {
 	if (e.key === 'Escape') hideModal();
+});
+
+// AI Chat Widget Logic
+const chatToggle = document.getElementById('chatToggle');
+const chatWindow = document.getElementById('chatWindow');
+const chatClose = document.getElementById('chatClose');
+const chatForm = document.getElementById('chatForm');
+const chatInput = document.getElementById('chatInput');
+const chatMessages = document.getElementById('chatMessages');
+
+// Load chat history from localStorage
+let chatHistory = JSON.parse(localStorage.getItem('azim_chat_history')) || [];
+
+const saveChat = () => {
+	localStorage.setItem('azim_chat_history', JSON.stringify(chatHistory));
+};
+
+const toggleChat = () => {
+	chatWindow.classList.toggle('is-active');
+	if (chatWindow.classList.contains('is-active')) {
+		chatWasOpened = true;
+		chatInput.focus();
+		chatToggle.style.opacity = '0';
+		chatToggle.style.pointerEvents = 'none';
+		// Закрываем модалку, если она открыта
+		if (contactModal?.classList.contains('is-active')) {
+			hideModal();
+		}
+	} else {
+		chatToggle.style.opacity = '1';
+		chatToggle.style.pointerEvents = 'all';
+	}
+};
+
+const appendMessage = (role, text, isHistory = false) => {
+	const bubble = document.createElement('div');
+	bubble.className = `chat-bubble chat-bubble--${role}`;
+	bubble.textContent = text;
+	chatMessages.appendChild(bubble);
+
+	// Production-grade auto-scroll
+	if (!isHistory) {
+		setTimeout(() => {
+			chatMessages.scrollTo({
+				top: chatMessages.scrollHeight,
+				behavior: 'smooth'
+			});
+		}, 50);
+	}
+};
+
+// Initial load of history
+const loadHistory = () => {
+	chatHistory.forEach(msg => {
+		const role = msg.role === 'user' ? 'user' : 'ai';
+		appendMessage(role, msg.content, true);
+	});
+	chatMessages.scrollTop = chatMessages.scrollHeight;
+};
+
+loadHistory();
+
+// Prevent scroll event bubbling to body (double protection for Lenis)
+chatMessages?.addEventListener('wheel', (e) => {
+	const scrollTop = chatMessages.scrollTop;
+	const scrollHeight = chatMessages.scrollHeight;
+	const height = chatMessages.offsetHeight;
+	const delta = e.deltaY;
+
+	if ((delta > 0 && scrollTop + height >= scrollHeight) || (delta < 0 && scrollTop <= 0)) {
+		e.preventDefault();
+	}
+}, { passive: false });
+
+const showTyping = () => {
+	const typing = document.createElement('div');
+	typing.className = 'chat-bubble chat-bubble--ai chat-bubble--typing';
+	typing.id = 'typingIndicator';
+	const loadingImg = document.createElement('img');
+	loadingImg.src = 'icons8-loading.gif';
+	loadingImg.alt = 'Thinking...';
+	loadingImg.style.width = '30px';
+	loadingImg.style.display = 'block';
+	typing.appendChild(loadingImg);
+	chatMessages.appendChild(typing);
+	chatMessages.scrollTop = chatMessages.scrollHeight;
+};
+
+const hideTyping = () => {
+	const typing = document.getElementById('typingIndicator');
+	if (typing) typing.remove();
+};
+
+chatToggle?.addEventListener('click', toggleChat);
+chatClose?.addEventListener('click', () => {
+	chatWindow.classList.remove('is-active');
+	chatToggle.style.opacity = '1';
+	chatToggle.style.pointerEvents = 'all';
+});
+
+const typeWriter = (element, text, speed = 20) => {
+	let i = 0;
+	element.textContent = '';
+	return new Promise((resolve) => {
+		const type = () => {
+			if (i < text.length) {
+				element.textContent += text.charAt(i);
+				i++;
+				chatMessages.scrollTop = chatMessages.scrollHeight;
+				setTimeout(type, speed);
+			} else {
+				resolve();
+			}
+		};
+		type();
+	});
+};
+
+chatForm?.addEventListener('submit', async (e) => {
+	e.preventDefault();
+	const message = chatInput.value.trim();
+	if (!message) return;
+
+	appendMessage('user', message);
+	chatInput.value = '';
+	chatHistory.push({ role: 'user', content: message });
+	saveChat();
+
+	showTyping();
+
+	try {
+		const response = await fetch('/api/chat', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ messages: chatHistory })
+		});
+
+		const data = await response.json();
+		hideTyping();
+
+		if (data.choices && data.choices[0]) {
+			let aiMessage = data.choices[0].message.content;
+			aiMessage = aiMessage.replace(/[\*#_\[\]]/g, '').trim();
+
+			const bubble = document.createElement('div');
+			bubble.className = 'chat-bubble chat-bubble--ai';
+			chatMessages.appendChild(bubble);
+			await typeWriter(bubble, aiMessage);
+
+			chatHistory.push({ role: 'assistant', content: aiMessage });
+			saveChat();
+		} else {
+			appendMessage('ai', 'Извини, произошла ошибка подключения к ИИ.');
+		}
+	} catch (error) {
+		hideTyping();
+		appendMessage('ai', 'Ошибка: не удалось связаться с сервером.');
+		console.error('Chat Error:', error);
+	}
+});
+
+// Handle Chat Suggestions
+const chatSuggestions = document.getElementById('chatSuggestions');
+
+const sendAutoMessage = async (text) => {
+	appendMessage('user', text);
+	chatHistory.push({ role: 'user', content: text });
+	saveChat();
+	showTyping();
+
+	try {
+		const response = await fetch('/api/chat', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ messages: chatHistory })
+		});
+
+		const data = await response.json();
+		hideTyping();
+
+		if (data.choices && data.choices[0]) {
+			let aiMessage = data.choices[0].message.content;
+			aiMessage = aiMessage.replace(/[\*#_\[\]]/g, '').trim();
+
+			const bubble = document.createElement('div');
+			bubble.className = 'chat-bubble chat-bubble--ai';
+			chatMessages.appendChild(bubble);
+			await typeWriter(bubble, aiMessage);
+
+			chatHistory.push({ role: 'assistant', content: aiMessage });
+			saveChat();
+		}
+	} catch (error) {
+		hideTyping();
+		console.error('Auto Message Error:', error);
+	}
+};
+
+chatSuggestions?.addEventListener('click', (e) => {
+	if (e.target.classList.contains('chat-suggestion')) {
+		const text = e.target.textContent;
+		sendAutoMessage(text);
+		// Optionally hide suggestions after first click to save space
+		// chatSuggestions.style.display = 'none';
+	}
+});
+
+// Feature Attention Logic (Pulse)
+const initChatAttention = () => {
+	const chatToggleBtn = document.getElementById('chatToggle');
+
+	// Check if already focused
+	if (localStorage.getItem('azim_chat_attention_shown')) return;
+
+	// Start pulsing after delay to catch user's eye
+	setTimeout(() => {
+		chatToggleBtn.classList.add('pulse');
+	}, 2000);
+
+	chatToggleBtn?.addEventListener('click', () => {
+		chatToggleBtn.classList.remove('pulse');
+		localStorage.setItem('azim_chat_attention_shown', 'true');
+	}, { once: true });
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+	initChatAttention();
 });
