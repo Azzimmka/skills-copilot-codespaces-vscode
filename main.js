@@ -363,7 +363,8 @@ const typeWriter = (element, text, speed = 20) => {
 chatForm?.addEventListener('submit', async (e) => {
 	e.preventDefault();
 	const message = chatInput.value.trim();
-	if (!message) return;
+	if (chatForm.dataset.loading === 'true') return;
+	chatForm.dataset.loading = 'true';
 
 	appendMessage('user', message);
 	chatInput.value = '';
@@ -381,6 +382,7 @@ chatForm?.addEventListener('submit', async (e) => {
 
 		const data = await response.json();
 		hideTyping();
+		chatForm.dataset.loading = 'false';
 
 		if (data.choices && data.choices[0]) {
 			let aiMessage = data.choices[0].message.content;
@@ -407,6 +409,9 @@ chatForm?.addEventListener('submit', async (e) => {
 const chatSuggestions = document.getElementById('chatSuggestions');
 
 const sendAutoMessage = async (text) => {
+	if (chatForm.dataset.loading === 'true') return;
+	chatForm.dataset.loading = 'true';
+
 	appendMessage('user', text);
 	chatHistory.push({ role: 'user', content: text });
 	saveChat();
@@ -421,6 +426,7 @@ const sendAutoMessage = async (text) => {
 
 		const data = await response.json();
 		hideTyping();
+		chatForm.dataset.loading = 'false';
 
 		if (data.choices && data.choices[0]) {
 			let aiMessage = data.choices[0].message.content;
@@ -436,6 +442,7 @@ const sendAutoMessage = async (text) => {
 		}
 	} catch (error) {
 		hideTyping();
+		chatForm.dataset.loading = 'false';
 		console.error('Auto Message Error:', error);
 	}
 };

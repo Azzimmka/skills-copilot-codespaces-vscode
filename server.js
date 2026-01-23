@@ -84,16 +84,31 @@ app.post('/api/chat', chatLimiter, async (req, res) => {
     }
 
     try {
+        // Prepare and validate messages for Perplexity
+        const formattedMessages = messages
+            .filter(msg => msg.content && msg.content.trim() !== '') // Remove empty messages
+            .map(msg => ({
+                role: msg.role === 'ai' ? 'assistant' : msg.role,
+                content: msg.content.trim()
+            }));
+
+        // Perplexity requires messages to alternate: user, assistant, user, assistant...
+        // If the last message is from 'assistant', Perplexity will throw an error.
+        if (formattedMessages.length > 0 && formattedMessages[formattedMessages.length - 1].role === 'assistant') {
+            console.log('Skipping API call: last message is already from assistant');
+            return res.json({ choices: [{ message: { content: messages[messages.length - 1].content } }] });
+        }
+
         const response = await axios.post('https://api.perplexity.ai/chat/completions', {
             model: 'sonar',
             messages: [
                 { role: 'system', content: AZIM_SYSTEM_PROMPT },
-                ...messages
+                ...formattedMessages
             ],
-            temperature: 0.7, // Повышаем для живости речи
+            temperature: 0.7,
         }, {
             headers: {
-                'Authorization': `Bearer ${PERPLEXITY_API_KEY}`,
+                'Authorization': `Bearer ${PERPLEXITY_API_KEY.trim()}`,
                 'Content-Type': 'application/json'
             }
         });
