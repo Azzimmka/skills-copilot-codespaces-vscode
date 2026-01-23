@@ -1414,3 +1414,156 @@ button {
     box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
   }
 }
+
+/* --- CHAT UX ENHANCEMENTS --- */
+
+/* Chat Toggle Pulse Animation (More aggressive) */
+@keyframes pulse-attention {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  50% {
+    transform: scale(1.2);
+    box-shadow: 0 0 25px rgba(255, 255, 255, 0.6), 0 0 50px rgba(255, 255, 255, 0.3);
+  }
+
+  100% {
+    transform: scale(1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+}
+
+.chat-toggle.pulse {
+  animation: pulse-attention 1.5s infinite !important;
+  z-index: 10002 !important;
+  position: fixed;
+}
+
+/* Focus Overlay with Blur */
+.focus-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 10001;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.focus-overlay.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Chat Window - Dynamic Resizing */
+.chat-window {
+  /* Ensure smooth transitions for width/height/transform */
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.chat-window.is-expanded {
+  position: fixed !important;
+  width: 700px !important;
+  height: 85vh !important;
+  max-height: 900px !important;
+  bottom: 50% !important;
+  right: 50% !important;
+  transform: translate(50%, 50%) scale(1) !important;
+  border-radius: 24px !important;
+  z-index: 10005 !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+}
+
+@media (max-width: 768px) {
+  #chatExpand {
+    display: none !important;
+  }
+
+  .chat-header__controls {
+    gap: 4px;
+  }
+}
+
+/* Mobile Responsive Override */
+@media (max-width: 768px) {
+  .chat-window.is-expanded {
+    width: 100vw !important;
+    height: 100vh !important;
+    height: -webkit-fill-available !important;
+    bottom: 0 !important;
+    right: 0 !important;
+    transform: none !important;
+    border-radius: 0 !important;
+  }
+}
+
+/* Chat Header Controls */
+.chat-header__controls {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+}
+
+.chat-header__btn {
+  background: rgba(0, 0, 0, 0.05);
+  /* Light gray background */
+  border: none;
+  color: var(--text-muted);
+  /* Darker color for visibility */
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-header__btn:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: var(--text);
+  transform: scale(1.1);
+}
+
+.chat-header__btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.is-blurred main,
+.is-blurred .header,
+.is-blurred .footer {
+  filter: blur(10px);
+  pointer-events: none;
+  transition: filter 0.6s ease;
+}
+
+/* Final UI Polish for Visibility */
+.chat-header__btn {
+  color: #171717 !important;
+  /* Force dark color */
+  opacity: 0.5;
+}
+
+.chat-header__btn:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.05) !important;
+}
+
+.chat-close {
+  color: #171717 !important;
+  opacity: 0.5;
+}
+
+.chat-close:hover {
+  opacity: 1;
+}
+
+/* Ensure Toggle is always on top during focus */
+.chat-toggle {
+  z-index: 10002 !important;
+}

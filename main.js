@@ -248,6 +248,7 @@ document.addEventListener('keydown', (e) => {
 const chatToggle = document.getElementById('chatToggle');
 const chatWindow = document.getElementById('chatWindow');
 const chatClose = document.getElementById('chatClose');
+const chatExpand = document.getElementById('chatExpand'); // New expand button
 const chatForm = document.getElementById('chatForm');
 const chatInput = document.getElementById('chatInput');
 const chatMessages = document.getElementById('chatMessages');
@@ -340,6 +341,25 @@ chatClose?.addEventListener('click', () => {
 	chatWindow.classList.remove('is-active');
 	chatToggle.style.opacity = '1';
 	chatToggle.style.pointerEvents = 'all';
+
+	// Also reset expanded state on close for UX
+	chatWindow.classList.remove('is-expanded');
+});
+
+// Expand/Collapse Logic
+chatExpand?.addEventListener('click', (e) => {
+	e.stopPropagation();
+	chatWindow.classList.toggle('is-expanded');
+
+	// Toggle Icon (Maximize vs Minimize)
+	const icon = chatExpand.querySelector('svg');
+	if (chatWindow.classList.contains('is-expanded')) {
+		// Minimize icon SVG
+		icon.innerHTML = '<path d="M8 3v5H3M16 21v-5h5M16 8l5-5M3 21l5-5" />';
+	} else {
+		// Maximize icon SVG
+		icon.innerHTML = '<path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />';
+	}
 });
 
 const typeWriter = (element, text, speed = 20) => {
@@ -433,22 +453,39 @@ chatSuggestions?.addEventListener('click', (e) => {
 	}
 });
 
-// Feature Attention Logic (Pulse)
+// Feature Attention Logic (Pulse + Blur + Overlay)
 const initChatAttention = () => {
 	const chatToggleBtn = document.getElementById('chatToggle');
+	const focusOverlay = document.getElementById('focusOverlay');
 
-	// Check if already focused
+	// Check if already focused/seen
 	if (localStorage.getItem('azim_chat_attention_shown')) return;
 
-	// Start pulsing after delay to catch user's eye
+	// Start pulsing and blurring after delay to catch user's eye
 	setTimeout(() => {
 		chatToggleBtn.classList.add('pulse');
-	}, 2000);
+		if (focusOverlay) {
+			focusOverlay.classList.add('is-visible');
+			// Adding a class to body for global blurring of main content
+			document.body.classList.add('is-blurred');
+			document.body.style.overflow = 'hidden';
+		}
+	}, 1500); // Faster delay (1.5s) for better engagement
 
-	chatToggleBtn?.addEventListener('click', () => {
+	const dismissAttention = () => {
 		chatToggleBtn.classList.remove('pulse');
+		if (focusOverlay) {
+			focusOverlay.classList.remove('is-visible');
+			document.body.classList.remove('is-blurred');
+			document.body.style.overflow = '';
+		}
 		localStorage.setItem('azim_chat_attention_shown', 'true');
-	}, { once: true });
+	};
+
+	chatToggleBtn?.addEventListener('click', dismissAttention, { once: true });
+
+	// Allow dismissing by clicking the overlay
+	focusOverlay?.addEventListener('click', dismissAttention);
 };
 
 document.addEventListener('DOMContentLoaded', () => {
