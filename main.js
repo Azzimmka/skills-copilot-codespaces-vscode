@@ -261,22 +261,57 @@ const saveChat = () => {
 	localStorage.setItem('azim_chat_history', JSON.stringify(chatHistory));
 };
 
+const syncChatHeight = () => {
+	const isMobile = window.innerWidth <= 480;
+	if (window.visualViewport && chatWindow.classList.contains('is-active') && isMobile) {
+		// Force the chat window to match the actual visible area
+		const vh = window.visualViewport.height;
+		const offset = window.visualViewport.offsetTop;
+
+		chatWindow.style.height = `${vh}px`;
+		chatWindow.style.top = `${offset}px`;
+
+		// Ensure message area is scrolled to bottom if keyboard just appeared
+		chatMessages.scrollTop = chatMessages.scrollHeight;
+	}
+};
+
 const toggleChat = () => {
 	chatWindow.classList.toggle('is-active');
-	if (chatWindow.classList.contains('is-active')) {
+	const isActive = chatWindow.classList.contains('is-active');
+	const isMobile = window.innerWidth <= 480;
+
+	if (isActive) {
 		chatWasOpened = true;
 		chatInput.focus();
 		chatToggle.style.opacity = '0';
 		chatToggle.style.pointerEvents = 'none';
-		// Закрываем модалку, если она открыта
+
+		if (isMobile) {
+			document.body.style.overflow = 'hidden';
+			syncChatHeight();
+		}
+
 		if (contactModal?.classList.contains('is-active')) {
 			hideModal();
 		}
 	} else {
 		chatToggle.style.opacity = '1';
 		chatToggle.style.pointerEvents = 'all';
+
+		if (isMobile) {
+			document.body.style.overflow = '';
+			chatWindow.style.height = '';
+			chatWindow.style.top = '';
+		}
 	}
 };
+
+// Listen for viewport changes (keyboard show/hide)
+if (window.visualViewport) {
+	window.visualViewport.addEventListener('resize', syncChatHeight);
+	window.visualViewport.addEventListener('scroll', syncChatHeight);
+}
 
 const appendMessage = (role, text, isHistory = false) => {
 	const bubble = document.createElement('div');

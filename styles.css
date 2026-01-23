@@ -1129,6 +1129,8 @@ button {
   justify-content: space-between;
   background: #fcfcfc;
   border-radius: 16px 16px 0 0;
+  flex-shrink: 0;
+  /* Important: prevents header from compressing */
 }
 
 .chat-header__info {
@@ -1311,33 +1313,39 @@ button {
   .chat-window {
     width: 100% !important;
     height: 100dvh !important;
-    /* Dynamic height to handle keyboard */
     top: 0 !important;
-    bottom: 0 !important;
     left: 0 !important;
     right: 0 !important;
+    bottom: static !important;
+    margin: 0 !important;
     border-radius: 0 !important;
     position: fixed !important;
     z-index: 10001 !important;
-    transform: none !important;
-    /* Remove any translation that could push it up */
+    display: flex !important;
+    flex-direction: column !important;
+    transition: none !important;
+    /* Disable animations so it follows keyboard instantly */
   }
 
-  /* Force header to stick to top in the flex container */
-  .chat-header {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    flex-shrink: 0;
-    border-radius: 0;
-    padding: 16px 16px 12px;
-    background: white;
-    /* Solid background to cover scrolled content */
+  /* Ensure messages area is the only scrollable part */
+  .chat-messages {
+    flex: 1 !important;
+    overflow-y: auto !important;
   }
 
   .chat-widget {
-    bottom: 0 !important;
-    right: 0 !important;
+    bottom: 20px !important;
+    right: 20px !important;
+    width: auto !important;
+    height: auto !important;
+    z-index: 20000 !important;
+  }
+
+  /* Ensure toggle is centered in its small mobile container */
+  .chat-toggle {
+    width: 60px !important;
+    height: 60px !important;
+    margin: 0 !important;
   }
 }
 
