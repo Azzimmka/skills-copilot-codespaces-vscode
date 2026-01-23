@@ -1566,4 +1566,6 @@ button {
 /* Ensure Toggle is always on top during focus */
 .chat-toggle {
   z-index: 10002 !important;
+  width: 80px;
+  height: 80px;
 }
