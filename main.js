@@ -175,39 +175,75 @@ const savedLang = localStorage.getItem("preferred-lang") || "ru";
 setLanguage(savedLang);
 updateProgress();
 
-// Trailing cursor effect
-const createParticle = (x, y) => {
-	const particle = document.createElement('div');
-	particle.className = 'cursor-particle';
-	const size = Math.random() * 8 + 4;
-	particle.style.width = `${size}px`;
-	particle.style.height = `${size}px`;
-	particle.style.left = `${x}px`;
-	particle.style.top = `${y}px`;
-	document.body.appendChild(particle);
+// High-performance Canvas Cursor
+const canvas = document.getElementById('cursorCanvas');
+const ctx = canvas.getContext('2d');
+let particles = [];
 
-	setTimeout(() => particle.remove(), 600);
+const resizeCanvas = () => {
+	canvas.width = window.innerWidth;
+	canvas.height = window.innerHeight;
 };
 
-let lastX = 0;
-let lastY = 0;
-let throttle = false;
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+class Particle {
+	constructor(x, y) {
+		this.x = x;
+		this.y = y;
+		this.size = Math.random() * 6 + 2;
+		this.speedX = Math.random() * 1 - 0.5;
+		this.speedY = Math.random() * 1 - 0.5;
+		this.life = 1;
+		this.decay = Math.random() * 0.02 + 0.01;
+	}
+
+	update() {
+		this.x += this.speedX;
+		this.y += this.speedY;
+		this.life -= this.decay;
+		if (this.size > 0.1) this.size -= 0.05;
+	}
+
+	draw() {
+		const color = getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#171717';
+		ctx.fillStyle = color;
+		ctx.globalAlpha = Math.max(0, this.life * 0.5);
+		ctx.beginPath();
+		ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+		ctx.fill();
+	}
+}
+
+const animateParticles = () => {
+	ctx.clearRect(0, 0, canvas.width, canvas.height);
+	for (let i = 0; i < particles.length; i++) {
+		particles[i].update();
+		particles[i].draw();
+		if (particles[i].life <= 0) {
+			particles.splice(i, 1);
+			i--;
+		}
+	}
+	requestAnimationFrame(animateParticles);
+};
+
+animateParticles();
+
+let lastMouseX = 0;
+let lastMouseY = 0;
 
 document.addEventListener('mousemove', (e) => {
-	if (throttle) return;
-	throttle = true;
-
-	const dx = e.clientX - lastX;
-	const dy = e.clientY - lastY;
+	const dx = e.clientX - lastMouseX;
+	const dy = e.clientY - lastMouseY;
 	const distance = Math.sqrt(dx * dx + dy * dy);
 
 	if (distance > 10) {
-		createParticle(e.clientX, e.clientY);
-		lastX = e.clientX;
-		lastY = e.clientY;
+		particles.push(new Particle(e.clientX, e.clientY));
+		lastMouseX = e.clientX;
+		lastMouseY = e.clientY;
 	}
-
-	setTimeout(() => throttle = false, 30);
 });
 
 
