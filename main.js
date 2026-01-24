@@ -313,41 +313,50 @@ const syncChatHeight = () => {
 };
 
 const toggleChat = () => {
-	chatWindow.classList.toggle('is-active');
 	const isActive = chatWindow.classList.contains('is-active');
-	const isMobile = window.innerWidth <= 480;
-
 	if (isActive) {
-		chatWasOpened = true;
-		chatInput.focus();
-		chatToggle.style.opacity = '0';
-		chatToggle.style.pointerEvents = 'none';
-
-		if (isMobile) {
-			document.body.style.overflow = 'hidden';
-			syncChatHeight();
-		}
-
-		if (contactModal?.classList.contains('is-active')) {
-			hideModal();
-		}
+		closeChat();
 	} else {
-		chatToggle.style.opacity = '1';
-		chatToggle.style.pointerEvents = 'all';
-
-		if (isMobile) {
-			document.body.style.overflow = '';
-			chatWindow.style.height = '';
-			chatWindow.style.top = '';
-		}
+		openChat();
 	}
 };
 
-// Listen for viewport changes (keyboard show/hide)
-if (window.visualViewport) {
-	window.visualViewport.addEventListener('resize', syncChatHeight);
-	window.visualViewport.addEventListener('scroll', syncChatHeight);
-}
+const openChat = () => {
+	chatWindow.classList.add('is-active');
+	chatWasOpened = true;
+	chatInput.focus();
+	chatToggle.style.opacity = '0';
+	chatToggle.style.pointerEvents = 'none';
+
+	if (window.innerWidth <= 480) {
+		document.body.style.overflow = 'hidden';
+		syncChatHeight();
+	}
+
+	if (contactModal?.classList.contains('is-active')) {
+		hideModal();
+	}
+};
+
+const closeChat = () => {
+	chatWindow.classList.remove('is-active');
+	chatWindow.classList.remove('is-expanded');
+	chatToggle.style.opacity = '1';
+	chatToggle.style.pointerEvents = 'all';
+
+	// GUARANTEED SCROLL RESTORE
+	document.body.style.overflow = '';
+	document.body.classList.remove('is-blurred');
+
+	if (window.innerWidth <= 480) {
+		chatWindow.style.height = '';
+		chatWindow.style.top = '';
+	}
+};
+
+// Listeners
+chatToggle?.addEventListener('click', toggleChat);
+chatClose?.addEventListener('click', closeChat);
 
 const appendMessage = (role, text, isHistory = false) => {
 	const bubble = document.createElement('div');
@@ -407,25 +416,6 @@ const hideTyping = () => {
 	const typing = document.getElementById('typingIndicator');
 	if (typing) typing.remove();
 };
-
-chatToggle?.addEventListener('click', toggleChat);
-chatClose?.addEventListener('click', () => {
-	chatWindow.classList.remove('is-active');
-	chatToggle.style.opacity = '1';
-	chatToggle.style.pointerEvents = 'all';
-
-	// Fix mobile freeze: restore scroll
-	document.body.style.overflow = '';
-
-	const isMobile = window.innerWidth <= 480;
-	if (isMobile) {
-		chatWindow.style.height = '';
-		chatWindow.style.top = '';
-	}
-
-	// Also reset expanded state on close for UX
-	chatWindow.classList.remove('is-expanded');
-});
 
 // Expand/Collapse Logic
 chatExpand?.addEventListener('click', (e) => {
@@ -546,41 +536,6 @@ chatSuggestions?.addEventListener('click', (e) => {
 	}
 });
 
-// Feature Attention Logic (Pulse + Blur + Overlay)
-const initChatAttention = () => {
-	const chatToggleBtn = document.getElementById('chatToggle');
-	const focusOverlay = document.getElementById('focusOverlay');
-
-	// Check if already focused/seen
-	if (localStorage.getItem('azim_chat_attention_shown')) return;
-
-	// Start pulsing and blurring after delay to catch user's eye
-	setTimeout(() => {
-		chatToggleBtn.classList.add('pulse');
-		if (focusOverlay) {
-			focusOverlay.classList.add('is-visible');
-			// Adding a class to body for global blurring of main content
-			document.body.classList.add('is-blurred');
-			document.body.style.overflow = 'hidden';
-		}
-	}, 1500); // Faster delay (1.5s) for better engagement
-
-	const dismissAttention = () => {
-		chatToggleBtn.classList.remove('pulse');
-		if (focusOverlay) {
-			focusOverlay.classList.remove('is-visible');
-			document.body.classList.remove('is-blurred');
-			document.body.style.overflow = '';
-		}
-		localStorage.setItem('azim_chat_attention_shown', 'true');
-	};
-
-	chatToggleBtn?.addEventListener('click', dismissAttention, { once: true });
-
-	// Allow dismissing by clicking the overlay
-	focusOverlay?.addEventListener('click', dismissAttention);
-};
-
 document.addEventListener('DOMContentLoaded', () => {
-	initChatAttention();
+	// init functions here
 });
