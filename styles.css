@@ -1065,6 +1065,7 @@ button {
   overflow: hidden;
   animation: float-widget 4s ease-in-out infinite;
   margin: 10px;
+  padding: 5px;
 }
 
 @keyframes float-widget {
@@ -1283,7 +1284,7 @@ button {
   flex: 1;
   border: 1px solid var(--border);
   padding: 8px 12px;
-  border-radius: 8px;
+  border-radius: 20px;
   font-size: 14px;
   font-family: inherit;
   outline: none;
@@ -1427,30 +1428,6 @@ button {
   transition: transform 0.2s ease;
 }
 
-/* AI Chat Toggle Tooltip */
-.chat-widget::before {
-  content: "Virtual Azim";
-  position: absolute;
-  right: 80px;
-  bottom: 14px;
-  background: var(--text);
-  color: var(--bg);
-  padding: 8px 16px;
-  border-radius: 12px;
-  font-size: 13px;
-  font-weight: 500;
-  white-space: nowrap;
-  opacity: 0;
-  transform: translateX(10px);
-  transition: all 0.3s ease;
-  pointer-events: none;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.chat-widget:hover::before {
-  opacity: 1;
-  transform: translateX(0);
-}
 
 .chat-toggle {
   z-index: 1000;
@@ -1588,4 +1565,4 @@ button {
   transition: all 0.2s;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: center;}

@@ -41,8 +41,8 @@ const translations = {
 		chat_online: "В сети",
 		chat_welcome: "Привет! Я виртуальный клон Азима. Спроси меня о чем угодно!",
 		chat_placeholder: "Ваше сообщение...",
-		suggest_1: "Разработай мне ...",
-		suggest_2: "У меня проблемы с ...",
+		suggest_1: "У меня проблемы с ...",
+		suggest_2: "Почему ты грубый?",
 		suggest_3: "Твои проекты",
 		onboarding_title: "Встречайте Виртуального Азима! 🤖",
 		onboarding_text: "Теперь вы можете пообщаться с моим ИИ-клоном. Он ответит на любые вопросы о моих проектах и навыках в реальном времени.",
@@ -377,6 +377,15 @@ chatClose?.addEventListener('click', () => {
 	chatWindow.classList.remove('is-active');
 	chatToggle.style.opacity = '1';
 	chatToggle.style.pointerEvents = 'all';
+
+	// Fix mobile freeze: restore scroll
+	document.body.style.overflow = '';
+
+	const isMobile = window.innerWidth <= 480;
+	if (isMobile) {
+		chatWindow.style.height = '';
+		chatWindow.style.top = '';
+	}
 
 	// Also reset expanded state on close for UX
 	chatWindow.classList.remove('is-expanded');
