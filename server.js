@@ -198,8 +198,8 @@ app.post('/api/chat', chatLimiter, async (req, res) => {
             return res.json({ choices: [{ message: { content: "System: Waiting for user input..." } }] });
         }
 
-        const response = await axios.post('https://api.perplexity.ai/chat/completions', {
-            model: 'sonar',
+        const response = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
+            model: 'llama-3.3-70b-versatile',
             messages: [
                 { role: 'system', content: AZIM_SYSTEM_PROMPT },
                 ...validMessages
