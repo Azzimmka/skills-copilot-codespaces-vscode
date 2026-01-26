@@ -53,6 +53,9 @@ body {
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 ::selection {
@@ -755,8 +758,9 @@ button {
 
 /* Footer */
 .footer {
+  margin-top: auto;
+  padding: 40px 0;
   border-top: 1px solid var(--border);
-  padding: 32px 0;
   text-align: center;
 }
 
@@ -943,7 +947,7 @@ button {
   object-fit: contain;
 }
 
-@keyframes modalBounce {
+@keyframes voicePulse {
 
   0%,
   100% {
@@ -1176,8 +1180,9 @@ button {
   gap: 14px;
   background: #fdfdfd;
   scroll-behavior: smooth;
-  height: 100%;
-  /* Ensure flex child takes full height */
+  flex: 1;
+  /* Grow to fill window */
+  overflow-y: auto;
 }
 
 .chat-messages::-webkit-scrollbar {
@@ -1267,32 +1272,64 @@ button {
   gap: 8px;
 }
 
-.chat-input input {
+.chat-input textarea {
   flex: 1;
   border: 1px solid var(--border);
-  padding: 8px 12px;
+  padding: 12px 14px;
+  /* More padding */
   border-radius: 20px;
-  font-size: 14px;
+  font-size: 15px;
+  /* Bigger font */
   font-family: inherit;
   outline: none;
   transition: border-color 0.2s;
+  resize: none;
+  overflow-y: auto;
+  height: auto;
+  min-height: 44px;
+  /* Taller default */
+  max-height: 200px;
+  line-height: 1.5;
+  display: block;
+
+  /* Custom Scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
 }
 
-.chat-input input:focus {
+.chat-input textarea::-webkit-scrollbar {
+  width: 4px;
+}
+
+.chat-input textarea::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-input textarea::-webkit-scrollbar-thumb {
+  background-color: var(--border);
+  border-radius: 4px;
+}
+
+.chat-input textarea:focus {
   border-color: var(--text);
 }
 
 .chat-send {
+  flex-shrink: 0;
+  /* Don't shrink */
   color: var(--bg);
   border: none;
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
+  width: 44px;
+  /* Taller button */
+  height: 44px;
+  border-radius: 12px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: background 0.2s;
+  align-self: flex-end;
+  /* Align to bottom for multiline */
 }
 
 
@@ -1407,4 +1444,95 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Code Block Styles (Notion-like) */
+.code-block {
+  background: #2d2d2d;
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 12px 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.code-block__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #1e1e1e;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.code-block__lang {
+  font-size: 11px;
+  font-weight: 600;
+  color: #9cdcfe;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.code-block__copy {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: #a0a0a0;
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.code-block__copy:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.code-block__copy.is-copied {
+  background: #27ae60;
+  color: #fff;
+}
+
+.code-block pre {
+  margin: 0;
+  padding: 16px;
+  overflow-x: auto;
+  background: transparent !important;
+}
+
+.code-block code {
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #d4d4d4;
+  text-shadow: none !important;
+}
+
+/* Inline code style */
+.chat-bubble--ai code:not(.code-block code) {
+  background: rgba(0, 0, 0, 0.05);
+  padding: 2px 5px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  font-family: 'Consolas', monospace;
+  color: #e83e8c;
+}
+
+@media (max-width: 480px) {
+  .code-block {
+    margin: 8px 0;
+    border-radius: 6px;
+  }
+
+  .code-block pre {
+    padding: 12px;
+  }
+
+  .code-block code {
+    font-size: 12px;
+  }
 }

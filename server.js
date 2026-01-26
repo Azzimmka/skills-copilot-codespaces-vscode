@@ -71,12 +71,23 @@ const AZIM_SYSTEM_PROMPT = `
 КАК ТЫ ЗВУЧИШЬ “НЕ КАК БОТ”
 - Пиши естественно, как в реальном чате.
 - Можно короткие фразы. Можно “Смотри…”, “Честно…”, “Кстати…”.
-- Не используй канцелярит: “осуществляю”, “предоставляю услуги”, “на основании”.
-- Не штампуй одинаковые концовки.
-
+- Не используй канцелярит: “осуществляю”, “предоставляю услуги”,
 ФОРМАТ СООБЩЕНИЙ
-- Никакого Markdown: никаких **, #, [], списков с буллитами, таблиц.
-- Длина: по ситуации. Обычно 4–8 предложений. Если вопрос простой — 2–4. Если человек реально выбирает разработчика — 6–10.
+- Markdown разрешен. Используй его смело.
+- Код: ВСЕГДА используй тройные кавычки с указанием языка. ЭТО КРИТИЧНО!
+- Стиль кода: Пиши код чисто, красиво и современно (ES6+, семантика).
+- Комментарии: Только там, где сложно. Не пиши очевидные вещи.
+- Разделение: Текст отдельно, код отдельно. Не засоряй блок кода лишней болтовней.
+
+ПРИМЕР КРАСИВОГО КОДА:
+\`\`\`javascript
+const toggleChat = () => {
+    // Smooth transition
+    chatWindow.classList.toggle('active');
+};
+\`\`\`
+- Жирный текст (**текст**) используется для акцентов.
+- Длина: по ситуации. Обычно 4–8 предложений.
 - Эмодзи: 0–2 максимум, только если усиливает тепло/энергию.
 - Вопрос в конце: почти всегда 1 вопрос, чтобы вести диалог дальше (но не “допрос”).
 
@@ -142,101 +153,130 @@ NEXT STEP (почти всегда)
 
 app.post('/api/chat', chatLimiter, async (req, res) => {
     const { messages } = req.body;
+    console.log('Incoming messages count:', messages ? messages.length : 0);
 
     if (!PERPLEXITY_API_KEY) {
+        console.error('API Key Missing!');
         return res.status(500).json({ error: 'API key not configured' });
     }
 
     try {
-        // --- SENIOR LEVEL SANITIZATION ---
-        // Function to normalize messages: prevent role duplication and ensure valid sequence
-        const normalizeMessages = (msgs) => {
-            const cleaned = msgs
-                .filter(msg => msg.content && typeof msg.content === 'string' && msg.content.trim() !== '')
-                .map(msg => ({
-                    role: msg.role === 'ai' ? 'assistant' : msg.role,
-                    content: msg.content.trim()
-                }));
+        // Safe message normalization
+        let validMessages = messages
+            .filter(msg => msg && msg.content && String(msg.content).trim().length > 0)
+            .map(msg => ({
+                role: msg.role === 'ai' ? 'assistant' : (msg.role || 'user'),
+                content: String(msg.content).trim()
+            }));
 
-            if (cleaned.length === 0) return [];
-
-            const normalized = [];
-            // Merge consecutive messages from the same role
-            let lastMsg = cleaned[0];
-
-            for (let i = 1; i < cleaned.length; i++) {
-                const current = cleaned[i];
-                if (current.role === lastMsg.role) {
-                    // Merge content if same role
-                    lastMsg.content += `\n\n${current.content}`;
+        // STICT ALTERNATION ENFORCER: Merge consecutive messages from same role
+        const mergedMessages = [];
+        for (const msg of validMessages) {
+            if (mergedMessages.length === 0) {
+                mergedMessages.push(msg);
+            } else {
+                const lastMsg = mergedMessages[mergedMessages.length - 1];
+                if (lastMsg.role === msg.role) {
+                    // Merge content if roles are identical
+                    lastMsg.content += `\n\n${msg.content}`;
                 } else {
-                    normalized.push(lastMsg);
-                    lastMsg = current;
+                    mergedMessages.push(msg);
                 }
             }
-            normalized.push(lastMsg);
+        }
 
-            return normalized;
-        };
+        // Ensure the processed list ends with a user message
+        if (mergedMessages.length > 0 && mergedMessages[mergedMessages.length - 1].role === 'assistant') {
+            mergedMessages.pop();
+        }
 
-        const validMessages = normalizeMessages(messages);
+        // CRITICAL: Ensure the FIRST message is 'user'.
+        // Some models fail if the history starts with 'assistant' (orphaned response).
+        if (mergedMessages.length > 0 && mergedMessages[0].role === 'assistant') {
+            console.warn('Fixing history: Removing leading assistant message.');
+            mergedMessages.shift();
+        }
 
-        // Perplexity SPECIFIC Validation:
-        // 1. Must not be empty.
-        // 2. Last message must be 'user' (AI cannot reply to itself).
+        validMessages = mergedMessages;
+
+        // Debug: Log the final structure being sent
+        console.log('Final Messages Structure:', validMessages.map(m => m.role).join(' -> '));
+
         if (validMessages.length === 0) {
-            return res.status(400).json({ error: 'No valid messages found' });
+            return res.status(400).json({ error: 'No valid messages to send after cleanup' });
         }
 
-        if (validMessages[validMessages.length - 1].role === 'assistant') {
-            // Safe fallback: Drop the lastAI message so the user can continue, 
-            // OR return a specific error. For a robust chat, we just ignore the last AI message
-            // so the context is still valid for the *previous* user message, 
-            // BUT logically, we need a refined prompt. 
-            // Better approach: reject with clear error so client syncs up.
-            console.warn('Validation Failed: Last message is assistant.');
-            return res.json({ choices: [{ message: { content: "System: Waiting for user input..." } }] });
-        }
+        // Set up streaming headers
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
 
-        const response = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
-            model: 'llama-3.3-70b-versatile',
+        const response = await axios.post('https://api.perplexity.ai/chat/completions', {
+            model: 'sonar',
             messages: [
                 { role: 'system', content: AZIM_SYSTEM_PROMPT },
                 ...validMessages
             ],
             temperature: 0.7,
+            stream: true // ENABLE STREAMING
         }, {
             headers: {
                 'Authorization': `Bearer ${PERPLEXITY_API_KEY.trim()}`,
                 'Content-Type': 'application/json'
+            },
+            responseType: 'stream' // Axios must know we expect a stream
+        });
+
+        let fullAiResponse = "";
+
+        // Determine IP for logging outside the stream handlers
+        const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+
+        response.data.on('data', (chunk) => {
+            // Forward chunk to client immediately
+            res.write(chunk);
+
+            // Accumulate text for logging (parsing SSE chunks)
+            const lines = chunk.toString().split('\n');
+            for (const line of lines) {
+                if (line.trim().startsWith('data: ') && !line.includes('[DONE]')) {
+                    try {
+                        const data = JSON.parse(line.trim().slice(6));
+                        if (data.choices && data.choices[0] && data.choices[0].delta && data.choices[0].delta.content) {
+                            fullAiResponse += data.choices[0].delta.content;
+                        }
+                    } catch (e) {
+                        // ignore JSON parse errors on partial chunks
+                    }
+                }
             }
         });
 
-        let aiContent = response.data.choices[0].message.content;
+        response.data.on('end', () => {
+            // Clean up citations for logging
+            const cleanedLogContent = fullAiResponse
+                .replace(/\[\d+(?:,\s*\d+)*\]/g, '')
+                .replace(/\[\d+\]/g, '')
+                .trim();
 
-        // FINAL PRODUCTION CLEANUP: Aggressive regex to strip all Markdown/Citations
-        aiContent = aiContent
-            .replace(/\*\*\*/g, '')          // Triple bold-italic
-            .replace(/\*\*/g, '')           // Bold
-            .replace(/\*/g, '')              // Italic
-            .replace(/\[\d+(?:,\s*\d+)*\]/g, '') // Citations like [1], [1, 2], [1][2]
-            .replace(/\[\d+\]/g, '')         // Single digit citations
-            .replace(/`/g, '')               // Code blocks
-            .replace(/#{1,6}\s?/g, '');      // Headers
+            logConversation(messages, cleanedLogContent, ip);
+            res.end();
+        });
 
-        const cleanedContent = aiContent.trim();
+        response.data.on('error', (err) => {
+            console.error('Stream Error:', err);
+            res.end();
+        });
 
-        // Получаем IP пользователя (учитывая прокси Digital Ocean)
-        const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-
-        // Log the message for Azim to see with IP
-        logConversation(messages, cleanedContent, ip);
-
-        response.data.choices[0].message.content = cleanedContent;
-        res.json(response.data);
     } catch (error) {
-        console.error('Error communicating with Perplexity:', error.response?.data || error.message);
-        res.status(500).json({ error: 'Failed to get response from AI' });
+        console.error('API Error:', error.response?.data || error.message);
+        // If headers sent, we can't send JSON error, just end.
+        if (!res.headersSent) {
+            const errorMessage = error.response?.data?.error?.message || error.message || 'Unknown API Error';
+            res.status(500).json({ error: errorMessage });
+        } else {
+            res.end();
+        }
     }
 });
 

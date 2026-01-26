@@ -48,7 +48,13 @@
     content="Azim — Frontend Developer. 2 years of experience creating clean and modern interfaces." />
 
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" />
   <script src="https://unpkg.com/lenis@1.1.18/dist/lenis.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/lib/marked.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-css.min.js"></script>
   <script defer src="main.js"></script>
 </head>
 
@@ -345,16 +351,16 @@
         <button class="chat-suggestion" data-i18n="suggest_2">Почему ты грубый?</button>
         <button class="chat-suggestion" data-i18n="suggest_3">Твои проекты</button>
       </div>
+
       <form class="chat-input" id="chatForm">
-        <input type="text" id="chatInput" placeholder="Ваше сообщение..." data-i18n-placeholder="chat_placeholder"
-          autocomplete="off" />
+        <textarea id="chatInput" rows="1" placeholder="Ваше сообщение..." data-i18n-placeholder="chat_placeholder"
+          autocomplete="off" data-lenis-prevent></textarea>
         <button type="submit" class="chat-send">
           <img src="./icons8-send.svg" alt="">
         </button>
       </form>
     </div>
   </div>
-
 
   <footer class="footer">
     <div class="container">

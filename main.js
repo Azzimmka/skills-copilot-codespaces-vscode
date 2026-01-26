@@ -384,9 +384,52 @@ const loadHistory = () => {
 	chatMessages.scrollTop = chatMessages.scrollHeight;
 };
 
-loadHistory();
+// Client-side rate limit tracker
+const DAILY_LIMIT = 1000;
 
-// Prevent scroll event bubbling to body (double protection for Lenis)
+const getRateLimitData = () => {
+	const stored = localStorage.getItem('azim_rate_limit');
+	if (!stored) return null;
+	const data = JSON.parse(stored);
+	const today = new Date().toDateString();
+	if (data.date !== today) return null;
+	return data;
+};
+
+const saveRateLimitData = (used) => {
+	const today = new Date().toDateString();
+	localStorage.setItem('azim_rate_limit', JSON.stringify({ date: today, used }));
+};
+
+const updateRateLimitDisplay = () => {
+	const rateLimitEl = document.getElementById('rateLimitCounter');
+	if (!rateLimitEl) return;
+
+	let data = getRateLimitData();
+	if (!data) {
+		data = { used: 0 };
+		saveRateLimitData(0);
+	}
+
+	const remaining = DAILY_LIMIT - data.used;
+	rateLimitEl.textContent = `${remaining}`;
+
+	if (remaining < 100) rateLimitEl.classList.add('warning');
+	else rateLimitEl.classList.remove('warning');
+};
+
+const incrementRequestCount = () => {
+	let data = getRateLimitData();
+	const used = data ? data.used + 1 : 1;
+	saveRateLimitData(used);
+	updateRateLimitDisplay();
+};
+
+// Initial calls
+loadHistory();
+updateRateLimitDisplay();
+
+// Prevent scroll event bubbling
 chatMessages?.addEventListener('wheel', (e) => {
 	const scrollTop = chatMessages.scrollTop;
 	const scrollHeight = chatMessages.scrollHeight;
@@ -433,6 +476,68 @@ chatExpand?.addEventListener('click', (e) => {
 	}
 });
 
+// Configure Marked with PrismJS highlighting
+const renderer = new marked.Renderer();
+
+// Custom code block renderer with copy button (Notion-style)
+renderer.code = (code, lang) => {
+	const language = lang || 'plaintext';
+	let highlighted;
+
+	try {
+		highlighted = Prism.highlight(code, Prism.languages[language] || Prism.languages.javascript, language);
+	} catch (e) {
+		highlighted = code;
+	}
+
+	return `
+        <div class="code-block" data-lang="${language}">
+            <div class="code-block__header">
+                <span class="code-block__lang">${language}</span>
+                <button class="code-block__copy" onclick="copyCode(this)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                        <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                    </svg>
+                    <span>Copy</span>
+                </button>
+            </div>
+            <pre class="language-${language}"><code>${highlighted}</code></pre>
+        </div>`;
+};
+
+marked.setOptions({
+	renderer: renderer,
+	breaks: true,
+	gfm: true
+});
+
+const markdownToHTML = (text) => {
+	// Handle unclosed triple backticks for live streaming
+	let processedText = text;
+	const backtickCount = (processedText.match(/```/g) || []).length;
+	if (backtickCount % 2 !== 0) {
+		processedText += '\n```';
+	}
+	return marked.parse(processedText);
+};
+
+// Global copy function
+window.copyCode = (btn) => {
+	const pre = btn.closest('.code-block').querySelector('code');
+	const text = pre.innerText;
+	navigator.clipboard.writeText(text).then(() => {
+		const span = btn.querySelector('span');
+		const originalText = span.textContent;
+		span.textContent = 'Copied!';
+		btn.classList.add('is-copied');
+		setTimeout(() => {
+			span.textContent = originalText;
+			btn.classList.remove('is-copied');
+		}, 2000);
+	});
+};
+
 // Clear Chat Logic
 chatClear?.addEventListener('click', () => {
 	if (chatHistory.length === 0) return;
@@ -478,36 +583,100 @@ const sendMessage = async (text) => {
 	showTyping();
 
 	try {
+		// Optimize context: send only last 12 messages
+		const recentHistory = chatHistory.slice(-12);
+
 		const response = await fetch('/api/chat', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ messages: chatHistory })
+			body: JSON.stringify({ messages: recentHistory })
 		});
 
-		const data = await response.json();
-		hideTyping();
+		if (!response.ok) {
+			const errorData = await response.json();
+			throw new Error(errorData.error || 'Server Error');
+		}
+
+		// Create AI Bubble immediately
+		const aiBubble = document.createElement('div');
+		aiBubble.className = 'chat-bubble chat-bubble--ai';
+		// Add a placeholder/cursor if desired, or just start empty
+		chatMessages.appendChild(aiBubble);
+		hideTyping(); // Remove the generic spinner
+
+		const reader = response.body.getReader();
+		const decoder = new TextDecoder();
+		let buffer = ''; // Buffer for partial lines
+		let fullText = '';
+		let loop = true;
+
+		while (loop) {
+			const { done, value } = await reader.read();
+			if (done) break;
+
+			// Decode chunk and add to buffer
+			const chunk = decoder.decode(value, { stream: true });
+			buffer += chunk;
+
+			// Process complete lines only
+			const lines = buffer.split('\n');
+			// Keep the last part (potential partial line) in buffer
+			buffer = lines.pop();
+
+			for (const line of lines) {
+				const trimmedLine = line.trim();
+				if (trimmedLine.startsWith('data: ') && !trimmedLine.includes('[DONE]')) {
+					try {
+						const data = JSON.parse(trimmedLine.slice(6));
+						const content = data.choices[0]?.delta?.content || "";
+						if (content) {
+							fullText += content;
+
+							// Clean citations like [1], [1, 2] on the fly
+							const cleanText = fullText
+								.replace(/\[\d+(?:,\s*\d+)*\]/g, '')
+								.replace(/\[\d+\]/g, '');                            // Render Markdown immediately
+							if (typeof marked !== 'undefined' && typeof marked.parse === 'function') {
+								aiBubble.innerHTML = marked.parse(cleanText);
+							} else {
+								aiBubble.textContent = cleanText; // Fallback
+							}
+
+							// Highlight code blocks
+							if (window.Prism) {
+								aiBubble.querySelectorAll('pre code').forEach((block) => {
+									Prism.highlightElement(block);
+								});
+							}
+
+							// Auto-scroll to bottom as text grows
+							chatMessages.scrollTop = chatMessages.scrollHeight;
+						}
+					} catch (e) {
+						// Should not happen often with buffering, but safe to ignore
+					}
+				}
+			}
+		}
+
 		chatForm.dataset.loading = 'false';
 
-		// Handle API Error Gracefully
-		if (data.error) {
-			throw new Error(data.error);
-		}
+		// Final save to history (using clean text)
+		const finalCleanText = fullText.replace(/\[\d+(?:,\s*\d+)*\]/g, '').replace(/\[\d+\]/g, '');
+		chatHistory.push({ role: 'assistant', content: finalCleanText });
+		saveChat();
 
-		if (data.choices && data.choices[0]) {
-			let aiMessage = data.choices[0].message.content;
-			aiMessage = aiMessage.replace(/[\*#_\[\]]/g, '').trim();
-
-			const bubble = document.createElement('div');
-			bubble.className = 'chat-bubble chat-bubble--ai';
-			chatMessages.appendChild(bubble);
-			await typeWriter(bubble, aiMessage);
-
-			chatHistory.push({ role: 'assistant', content: aiMessage });
-			saveChat();
-		} else {
-			throw new Error('No response content');
-		}
 	} catch (error) {
+		throw new Error(data.error);
+	}
+
+	if (data.choices && data.choices[0]) {
+		let aiMessage = data.choices[0].message.content;
+
+		const bubble = document.createElement('div');
+		bubble.className = 'chat-bubble chat-bubble--ai';
+		// Render Markdown HTML
+		bubble.innerHTML = markdownToHTML(aiMessage);
 		hideTyping();
 		chatForm.dataset.loading = 'false';
 		console.error('Chat Error:', error);
@@ -519,11 +688,33 @@ const sendMessage = async (text) => {
 	}
 };
 
+// Textarea Auto-Resize
+const adjustTextareaHeight = () => {
+	chatInput.style.height = 'auto';
+	chatInput.style.height = chatInput.scrollHeight + 'px';
+};
+
+chatInput?.addEventListener('input', adjustTextareaHeight);
+
+// Handle Enter to Send, Shift+Enter for newline
+chatInput?.addEventListener('keydown', (e) => {
+	if (e.key === 'Enter' && !e.shiftKey) {
+		e.preventDefault(); // Prevent default newline
+		chatForm.dispatchEvent(new Event('submit'));
+	}
+});
+
 chatForm?.addEventListener('submit', async (e) => {
 	e.preventDefault();
 	const message = chatInput.value.trim();
 	if (!message) return;
+
+	// Reset height before sending
+	chatInput.style.height = 'auto';
 	await sendMessage(message);
+
+	// Ensure height is reset after message is cleared (sendMessage clears value)
+	chatInput.style.height = 'auto';
 });
 
 // Handle Chat Suggestions
@@ -535,6 +726,7 @@ chatSuggestions?.addEventListener('click', (e) => {
 		sendMessage(text);
 	}
 });
+
 
 document.addEventListener('DOMContentLoaded', () => {
 	// init functions here
