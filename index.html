@@ -48,6 +48,7 @@
     content="Azim — Frontend Developer. 2 years of experience creating clean and modern interfaces." />
 
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="tubelight-nav.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" />
   <script src="https://unpkg.com/lenis@1.1.18/dist/lenis.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/lib/marked.umd.min.js"></script>
@@ -64,27 +65,72 @@
   </div>
   <canvas id="cursorCanvas"></canvas>
 
-  <header class="header">
-    <div class="container header__inner">
-      <div class="brand">
-        <div class="brand__text">
-          <span class="brand__name">Azim</span>
-          <span class="brand__role">Frontend Developer</span>
-        </div>
-      </div>
-      <nav class="nav">
-        <a href="#about" class="nav__link" data-i18n="nav_about">Обо мне</a>
-        <a href="#projects" class="nav__link" data-i18n="nav_projects">Проекты</a>
-        <a href="#skills" class="nav__link" data-i18n="nav_skills">Навыки</a>
-        <a href="#contact" class="nav__link" data-i18n="nav_contact">Контакты</a>
-      </nav>
-      <div class="lang">
-
-        <button class="lang__btn" data-lang-btn="ru" aria-pressed="true">RU</button>
-        <button class="lang__btn" data-lang-btn="uz" aria-pressed="false">UZ</button>
+  <!-- Tubelight Navbar -->
+  <nav class="tubelight-nav" id="tubelightNav">
+    <div class="tubelight-nav__container">
+      <a href="#about" class="tubelight-nav__item" data-nav="about">
+        <svg class="tubelight-nav__icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+          <circle cx="12" cy="7" r="4" />
+        </svg>
+        <span class="tubelight-nav__text" data-i18n="nav_about">Обо мне</span>
+      </a>
+      <a href="#projects" class="tubelight-nav__item" data-nav="projects">
+        <svg class="tubelight-nav__icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2">
+          <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+          <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+        </svg>
+        <span class="tubelight-nav__text" data-i18n="nav_projects">Проекты</span>
+      </a>
+      <a href="#skills" class="tubelight-nav__item" data-nav="skills">
+        <svg class="tubelight-nav__icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2">
+          <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+        </svg>
+        <span class="tubelight-nav__text" data-i18n="nav_skills">Навыки</span>
+      </a>
+      <a href="#contact" class="tubelight-nav__item" data-nav="contact">
+        <svg class="tubelight-nav__icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+          <polyline points="22,6 12,13 2,6" />
+        </svg>
+        <span class="tubelight-nav__text" data-i18n="nav_contact">Контакты</span>
+      </a>
+      <div class="tubelight-nav__lamp" id="navLamp">
+        <div class="tubelight-nav__glow"></div>
       </div>
     </div>
-  </header>
+  </nav>
+
+  <!-- Site Controls (Language + Theme) - Separate from navbar -->
+  <div class="site-controls">
+    <div class="site-controls__lang">
+      <button class="lang__btn" data-lang-btn="ru" aria-pressed="true">RU</button>
+      <button class="lang__btn" data-lang-btn="uz" aria-pressed="false">UZ</button>
+    </div>
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+      <svg class="sun-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="2">
+        <circle cx="12" cy="12" r="5" />
+        <line x1="12" y1="1" x2="12" y2="3" />
+        <line x1="12" y1="21" x2="12" y2="23" />
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+        <line x1="1" y1="12" x2="3" y2="12" />
+        <line x1="21" y1="12" x2="23" y2="12" />
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+      </svg>
+      <svg class="moon-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="2">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+      </svg>
+    </button>
+  </div>
+
 
   <main class="main">
     <section class="hero section" id="top">

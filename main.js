@@ -731,3 +731,149 @@ chatSuggestions?.addEventListener('click', (e) => {
 document.addEventListener('DOMContentLoaded', () => {
 	// init functions here
 });
+
+
+// ====================================
+// TUBELIGHT NAVBAR FUNCTIONALITY
+// ====================================
+
+const initTubelightNav = () => {
+	const navItems = document.querySelectorAll('.tubelight-nav__item');
+	const lamp = document.getElementById('navLamp');
+
+	if (!navItems.length || !lamp) return;
+
+	// Function to update lamp position
+	const updateLamp = (target) => {
+		const rect = target.getBoundingClientRect();
+		const container = target.closest('.tubelight-nav__container');
+		const containerRect = container.getBoundingClientRect();
+
+		const left = rect.left - containerRect.left;
+		const width = rect.width;
+
+		lamp.style.width = `${width}px`;
+		lamp.style.transform = `translateX(${left}px)`;
+	};
+
+	// Set initial active state
+	let currentActive = navItems[0];
+	currentActive.classList.add('is-active');
+	updateLamp(currentActive);
+
+	// Handle click events
+	navItems.forEach((item) => {
+		item.addEventListener('click', (e) => {
+			e.preventDefault();
+
+			// Remove active from all
+			navItems.forEach((nav) => nav.classList.remove('is-active'));
+
+			// Add active to clicked
+			item.classList.add('is-active');
+			currentActive = item;
+
+			// Update lamp position
+			updateLamp(item);
+
+			// Smooth scroll to section
+			const targetId = item.getAttribute('href');
+			const targetSection = document.querySelector(targetId);
+
+			if (targetSection) {
+				const offsetTop = targetSection.offsetTop - 100; // Account for navbar height
+				window.scrollTo({
+					top: offsetTop,
+					behavior: 'smooth'
+				});
+			}
+		});
+	});
+
+	// Update active state on scroll
+	const sections = Array.from(navItems).map(item => {
+		const href = item.getAttribute('href');
+		return document.querySelector(href);
+	}).filter(Boolean);
+
+	const updateActiveOnScroll = () => {
+		const scrollPos = window.scrollY + 150; // Offset for better UX
+
+		let current = sections[0];
+		sections.forEach((section) => {
+			const sectionTop = section.offsetTop;
+			if (scrollPos >= sectionTop) {
+				current = section;
+			}
+		});
+
+		const currentId = current ? current.id : 'about';
+		const activeItem = Array.from(navItems).find(item =>
+			item.getAttribute('href') === `#${currentId}`
+		);
+
+		if (activeItem && activeItem !== currentActive) {
+			navItems.forEach((nav) => nav.classList.remove('is-active'));
+			activeItem.classList.add('is-active');
+			currentActive = activeItem;
+			updateLamp(activeItem);
+		}
+	};
+
+	// Throttle scroll event for performance
+	let scrollTimeout;
+	window.addEventListener('scroll', () => {
+		if (scrollTimeout) {
+			clearTimeout(scrollTimeout);
+		}
+		scrollTimeout = setTimeout(updateActiveOnScroll, 50);
+	}, { passive: true });
+
+	// Update lamp on window resize
+	let resizeTimeout;
+	window.addEventListener('resize', () => {
+		if (resizeTimeout) {
+			clearTimeout(resizeTimeout);
+		}
+		resizeTimeout = setTimeout(() => {
+			if (currentActive) {
+				updateLamp(currentActive);
+			}
+		}, 100);
+	});
+};
+
+// Initialize navbar when DOM is ready
+if (document.readyState === 'loading') {
+	document.addEventListener('DOMContentLoaded', initTubelightNav);
+} else {
+	initTubelightNav();
+}
+
+// ====================================
+// THEME TOGGLE FUNCTIONALITY
+// ====================================
+
+const initThemeToggle = () => {
+	const themeToggle = document.getElementById('themeToggle');
+	if (!themeToggle) return;
+
+	// Check for saved theme preference or default to light
+	const currentTheme = localStorage.getItem('theme') || 'light';
+	document.documentElement.setAttribute('data-theme', currentTheme);
+
+	themeToggle.addEventListener('click', () => {
+		const theme = document.documentElement.getAttribute('data-theme');
+		const newTheme = theme === 'dark' ? 'light' : 'dark';
+
+		document.documentElement.setAttribute('data-theme', newTheme);
+		localStorage.setItem('theme', newTheme);
+	});
+};
+
+// Initialize theme toggle
+if (document.readyState === 'loading') {
+	document.addEventListener('DOMContentLoaded', initThemeToggle);
+} else {
+	initThemeToggle();
+}
