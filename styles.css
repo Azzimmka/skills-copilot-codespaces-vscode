@@ -604,9 +604,48 @@ button {
 }
 
 .project-card__title {
+  display: inline-flex;
+  align-items: center;
   font-size: 18px;
   font-weight: 600;
   margin: 0 0 8px 0;
+  color: var(--text);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+/* Animated Underline */
+.project-card__title::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: calc(100% - 18px);
+  /* Adjust for the icon width */
+  height: 2px;
+  background-color: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease;
+}
+
+.project-card__title:hover::after {
+  transform: scaleX(1);
+}
+
+.project-card__title:hover {
+  color: var(--accent);
+}
+
+.project-card__title svg {
+  opacity: 0.6;
+  transition: all 0.2s ease;
+}
+
+.project-card__title:hover svg {
+  opacity: 1;
+  transform: translate(2px, -2px);
 }
 
 .project-card__desc {
