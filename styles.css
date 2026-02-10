@@ -554,6 +554,7 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 5px;
 }
 
 .project-card__placeholder {
@@ -569,6 +570,7 @@ button {
   width: 48px;
   height: 48px;
   opacity: 0.2;
+  padding: 5px;
 }
 
 /* Project Doodles */
