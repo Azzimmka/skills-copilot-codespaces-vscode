@@ -4,7 +4,7 @@ Minimalist single-page portfolio with Russian and Uzbek language toggle, respons
 
 ## Features
 
-- 🤖 **AI Chat Widget** — Talk to Virtual Azim powered by Perplexity AI
+- 🤖 **AI Chat Widget** — Talk to Virtual Azim powered by Groq AI
 - 🌐 RU/UZ language switcher
 - 🎨 Minimalist grayscale design
 - ✨ Scroll reveal animations and progress bar
@@ -14,7 +14,7 @@ Minimalist single-page portfolio with Russian and Uzbek language toggle, respons
 
 - **Frontend:** HTML, CSS (Vanilla), JavaScript
 - **Backend:** Node.js + Express
-- **AI:** Perplexity API (Sonar model)
+- **AI:** Groq API (`llama-3.3-70b-versatile`)
 - **Deployment:** Digital Ocean App Platform
 
 ## Run locally
@@ -24,9 +24,9 @@ Minimalist single-page portfolio with Russian and Uzbek language toggle, respons
 npm install
 ```
 
-2. Create `.env` file and add your Perplexity API key:
+2. Create `.env` file and add your Groq API key:
 ```
-PERPLEXITY_API_KEY=your_key_here
+GROQ_API_KEY=your_groq_key_here
 ```
 
 3. Start the server:

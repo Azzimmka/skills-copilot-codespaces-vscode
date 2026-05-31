@@ -13,20 +13,6 @@
   --transition-speed: 0.3s;
 }
 
-[data-theme="dark"] {
-  --bg: #0a0a0a;
-  --bg-elevated: #171717;
-  --bg-card: #171717;
-  --text: #ededed;
-  --text-secondary: #a1a1a1;
-  --text-muted: #737373;
-  --border: #262626;
-  --accent: #ffffff;
-  --accent-hover: #d4d4d4;
-  --gradient-start: #ffffff;
-  --gradient-end: #a1a1a1;
-}
-
 * {
   box-sizing: border-box;
 }
@@ -190,44 +176,6 @@ button {
   height: 16px;
   background: var(--border);
   margin: 0 4px;
-}
-
-.theme-toggle {
-  background: transparent;
-  border: none;
-  padding: 6px;
-  border-radius: 6px;
-  color: var(--text-secondary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all var(--transition-speed) ease;
-}
-
-.theme-toggle:hover {
-  background: var(--bg-card);
-  color: var(--text);
-}
-
-.theme-toggle svg {
-  width: 18px;
-  height: 18px;
-}
-
-.sun-icon {
-  display: none;
-}
-
-.moon-icon {
-  display: block;
-}
-
-[data-theme="dark"] .sun-icon {
-  display: block;
-}
-
-[data-theme="dark"] .moon-icon {
-  display: none;
 }
 
 .lang__btn {

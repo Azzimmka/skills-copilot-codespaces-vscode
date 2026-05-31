@@ -24,14 +24,14 @@ const translations = {
 		nav_contact: "Контакты",
 		hero_greeting: "Привет, меня зовут",
 		hero_name: "Азим",
-		hero_desc: "Мне 20 лет. Уже 2 года изучаю фронтенд и создаю чистые, современные интерфейсы.",
+		hero_desc: "Мне 20 лет. Уже 3 года изучаю backend и разрабатываю серверную логику, API и базы данных.",
 		hero_cta_tg: "Написать в Telegram",
 		hero_cta_contact: "Контакты",
 		section_about: "Обо мне",
 		section_projects: "Проекты",
 		section_skills: "Навыки",
-		about_text_1: "Меня зовут Азим. Мне 20 лет, и последние два года я активно изучаю фронтенд-разработку. Мне нравится создавать минималистичные, чистые интерфейсы с фокусом на пользовательский опыт.",
-		about_text_2: "Сейчас развиваю навыки в React и современных UI-библиотеках. Открыт к новым проектам и сотрудничеству.",
+		about_text_1: "Меня зовут Азим. Мне 20 лет, и последние три года я активно изучаю backend-разработку. Мне нравится строить понятную серверную логику, API и надежную работу с базами данных.",
+		about_text_2: "Сейчас развиваю навыки в Python, Django, PostgreSQL и REST API. Открыт к новым проектам и сотрудничеству.",
 		section_contact: "Контакты",
 		contact_desc: "Хотите обсудить проект или просто пообщаться? Свяжитесь со мной любым удобным способом.",
 		footer_text: "© 2026 Азим. Сделано с любовью.",
@@ -55,14 +55,14 @@ const translations = {
 		nav_contact: "Kontaktlar",
 		hero_greeting: "Salom, mening ismim",
 		hero_name: "Azim",
-		hero_desc: "20 yoshdaman. 2 yildan beri frontendni o'rganaman va toza, zamonaviy interfeyslar yarataman.",
+		hero_desc: "20 yoshdaman. 3 yildan beri backendni o'rganaman va server logikasi, API hamda ma'lumotlar bazalari bilan ishlayman.",
 		hero_cta_tg: "Telegramda yozish",
 		hero_cta_contact: "Kontaktlar",
 		section_about: "Men haqimda",
 		section_projects: "Loyihalar",
 		section_skills: "Ko‘nikmalar",
-		about_text_1: "Mening ismim Azim. 20 yoshdaman va oxirgi ikki yil davomida frontend-dasturlashni faol o'rganaman. Foydalanuvchi tajribasiga e'tibor qaratgan minimalistik, toza interfeyslar yaratishni yoqtiraman. ",
-		about_text_2: "Hozir React va zamonaviy UI kutubxonalari bo'yicha ko'nikmalarimni rivojlantiryapman. Yangi loyihalar va hamkorlikka ochiqman.",
+		about_text_1: "Mening ismim Azim. 20 yoshdaman va oxirgi uch yil davomida backend-dasturlashni faol o'rganaman. Tushunarli server logikasi, API va ma'lumotlar bazalari bilan ishonchli ishlashni yoqtiraman.",
+		about_text_2: "Hozir Python, Django, PostgreSQL va REST API bo'yicha ko'nikmalarimni rivojlantiryapman. Yangi loyihalar va hamkorlikka ochiqman.",
 		section_contact: "Kontaktlar",
 		section_skills: "Ko'nikmalar",
 		contact_desc: "Loyihani muhokama qilmoqchimisiz yoki shunchaki gaplashmoqchimisiz? Men bilan qulay usulda bog'laning.",
@@ -446,7 +446,7 @@ const showTyping = () => {
 	typing.className = 'chat-bubble chat-bubble--ai chat-bubble--typing';
 	typing.id = 'typingIndicator';
 	const loadingImg = document.createElement('img');
-	loadingImg.src = 'icons8-loading.gif';
+	loadingImg.src = 'assets/gifs/icons8-loading.gif';
 	loadingImg.alt = 'Thinking...';
 	loadingImg.style.width = '30px';
 	loadingImg.style.display = 'block';
@@ -593,8 +593,14 @@ const sendMessage = async (text) => {
 		});
 
 		if (!response.ok) {
-			const errorData = await response.json();
-			throw new Error(errorData.error || 'Server Error');
+			let errorMessage = 'Server Error';
+			try {
+				const errorData = await response.json();
+				errorMessage = errorData.error || errorMessage;
+			} catch (_) {
+				// Keep fallback error message if response is not JSON
+			}
+			throw new Error(errorMessage);
 		}
 
 		// Create AI Bubble immediately
@@ -663,28 +669,25 @@ const sendMessage = async (text) => {
 
 		// Final save to history (using clean text)
 		const finalCleanText = fullText.replace(/\[\d+(?:,\s*\d+)*\]/g, '').replace(/\[\d+\]/g, '');
-		chatHistory.push({ role: 'assistant', content: finalCleanText });
-		saveChat();
+		if (finalCleanText) {
+			chatHistory.push({ role: 'assistant', content: finalCleanText });
+			saveChat();
+		}
 
 	} catch (error) {
-		throw new Error(data.error);
-	}
-
-	if (data.choices && data.choices[0]) {
-		let aiMessage = data.choices[0].message.content;
-
-		const bubble = document.createElement('div');
-		bubble.className = 'chat-bubble chat-bubble--ai';
-		// Render Markdown HTML
-		bubble.innerHTML = markdownToHTML(aiMessage);
-		hideTyping();
-		chatForm.dataset.loading = 'false';
 		console.error('Chat Error:', error);
 
-		// ROLLBACK: Remove the failed user message so they can try again
-		chatHistory.pop();
-		saveChat();
-		appendMessage('ai', 'Ошибка: не удалось связаться с сервером. Попробуйте еще раз.');
+		// Roll back the last user message from persisted history on failure
+		const lastMessage = chatHistory[chatHistory.length - 1];
+		if (lastMessage?.role === 'user' && lastMessage.content === text) {
+			chatHistory.pop();
+			saveChat();
+		}
+
+		appendMessage('ai', `Ошибка: ${error?.message || 'не удалось связаться с сервером. Попробуйте еще раз.'}`);
+	} finally {
+		hideTyping();
+		chatForm.dataset.loading = 'false';
 	}
 };
 
@@ -848,32 +851,4 @@ if (document.readyState === 'loading') {
 	document.addEventListener('DOMContentLoaded', initTubelightNav);
 } else {
 	initTubelightNav();
-}
-
-// ====================================
-// THEME TOGGLE FUNCTIONALITY
-// ====================================
-
-const initThemeToggle = () => {
-	const themeToggle = document.getElementById('themeToggle');
-	if (!themeToggle) return;
-
-	// Check for saved theme preference or default to light
-	const currentTheme = localStorage.getItem('theme') || 'light';
-	document.documentElement.setAttribute('data-theme', currentTheme);
-
-	themeToggle.addEventListener('click', () => {
-		const theme = document.documentElement.getAttribute('data-theme');
-		const newTheme = theme === 'dark' ? 'light' : 'dark';
-
-		document.documentElement.setAttribute('data-theme', newTheme);
-		localStorage.setItem('theme', newTheme);
-	});
-};
-
-// Initialize theme toggle
-if (document.readyState === 'loading') {
-	document.addEventListener('DOMContentLoaded', initThemeToggle);
-} else {
-	initThemeToggle();
 }

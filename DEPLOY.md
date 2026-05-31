@@ -10,9 +10,9 @@
 ## Следующие шаги для деплоя:
 
 ### 1. Обновить `.env` с новым API ключом
-После создания нового ключа в Perplexity, открой файл `.env` и вставь его:
+После создания нового ключа в Groq, открой файл `.env` и вставь его:
 ```
-PERPLEXITY_API_KEY=твой_новый_ключ
+GROQ_API_KEY=твой_ключ_от_groq
 ```
 
 ### 2. Протестировать локально
@@ -43,9 +43,9 @@ git push origin main
 - Перейди в **Settings** → **App-Level Environment Variables**
 - Нажми **Edit**
 - Добавь следующие переменные:
-  1. **Key:** `PERPLEXITY_API_KEY` | **Value:** `твой_ключ_от_perplexity`
-  2. **Key:** `TELEGRAM_BOT_TOKEN` | **Value:** `8427673032:AAFsEK6O90s24SH_GN9T5o1EGjdXEoSsP7c`
-  3. **Key:** `TELEGRAM_CHAT_ID` | **Value:** `5586955727`
+  1. **Key:** `GROQ_API_KEY` | **Value:** `твой_ключ_от_groq`
+  2. **Key:** `TELEGRAM_BOT_TOKEN` | **Value:** `твой_telegram_bot_token`
+  3. **Key:** `TELEGRAM_CHAT_ID` | **Value:** `твой_telegram_chat_id`
 - **Encrypt:** ✅ (включи шифрование для всех)
 - Нажми **Save**
 
@@ -68,7 +68,7 @@ git push origin main
 - ⚠️ Если чат не работает — проверь логи в Digital Ocean (Runtime Logs)
 
 ## Стоимость API
-Perplexity API платный. Следи за использованием на https://www.perplexity.ai/settings/api
+Groq API может быть платным или иметь лимиты. Следи за использованием в Groq Console.
 
 ## Контакты для помощи
 Если что-то не работает:

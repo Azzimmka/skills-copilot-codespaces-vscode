@@ -24,9 +24,49 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, './')));
 
-const PERPLEXITY_API_KEY = process.env.PERPLEXITY_API_KEY;
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+
+const getGroqConfigError = () => {
+    const key = GROQ_API_KEY?.trim();
+
+    if (!key) {
+        return 'GROQ_API_KEY не настроен. Добавь ключ Groq в .env и перезапусти сервер.';
+    }
+
+    if (
+        key === 'your_new_groq_key_here' ||
+        key === 'your_groq_key_here' ||
+        key.includes('your_')
+    ) {
+        return 'В .env сейчас стоит placeholder вместо реального Groq API key. Замени GROQ_API_KEY на настоящий ключ и перезапусти сервер.';
+    }
+
+    if (!key.startsWith('gsk_')) {
+        return 'GROQ_API_KEY выглядит неправильно. Ключ Groq обычно начинается с gsk_. Проверь значение в .env и перезапусти сервер.';
+    }
+
+    return null;
+};
+
+const getGroqApiErrorMessage = (error) => {
+    const status = error.response?.status;
+
+    if (status === 401) {
+        return 'Groq отклонил API key: 401 Unauthorized. Проверь, что GROQ_API_KEY настоящий, активный и сервер был перезапущен после изменения .env.';
+    }
+
+    if (status === 403) {
+        return 'Groq вернул 403 Forbidden. Проверь права проекта/организации и доступ к выбранной модели.';
+    }
+
+    if (status === 429) {
+        return 'Groq временно ограничил запросы: 429 Too Many Requests. Подожди немного или проверь лимиты аккаунта.';
+    }
+
+    return error.response?.data?.error?.message || error.message || 'Unknown API Error';
+};
 
 // Функция для логирования в Telegram
 const logConversation = async (messages, response, ip) => {
@@ -56,8 +96,9 @@ const AZIM_SYSTEM_PROMPT = `
 МОЯ ОСНОВА (факты обо мне, не выдумывать)
 - Меня зовут Азим.
 - Мне 20 лет.
-- Я Frontend разработчик, изучаю фронтенд ~2 года.
-- Люблю минимализм и чистые интерфейсы, современные UI-библиотеки.
+- Я Backend разработчик, изучаю backend ~3 года.
+- Мой основной стек: Python, Django, PostgreSQL, REST API, Git/GitHub.
+- Также понимаю HTML/CSS и немного frontend, чтобы нормально связывать backend с интерфейсом.
 - У меня есть портфолио-сайт: azzim.me.
 - Я интегрировал AI в свое портфолио, чтобы люди могли задавать вопросы обо мне.
 - Я открыт к сотрудничеству и новым проектам.
@@ -139,7 +180,7 @@ NEXT STEP (почти всегда)
 
 ПРИМЕРЫ ОТВЕТОВ (тон)
 Если спросили: “Что ты умеешь?”
-Ответ: Я делаю фронтенд так, чтобы сайт выглядел чисто, работал быстро и не ломался от мелочей. Люблю минимализм — когда в интерфейсе остаётся только то, что реально помогает пользователю. Ты сейчас выбираешь разработчика под проект или просто смотришь, что я делаю?
+Ответ: Я занимаюсь backend-разработкой: проектирую серверную логику, API, работу с базами данных и интеграции. Мой основной стек — Python, Django, PostgreSQL и REST API. Ты сейчас выбираешь разработчика под проект или просто смотришь, что я делаю?
 
 Если спросили: “Сколько стоит сайт?”
 Ответ: Зависит от масштаба — лендинг и продукт с личным кабинетом это две разные истории. Скажи, пожалуйста: что за сайт, какой срок и что уже есть (дизайн/ТЗ/пример)? Хочешь, я предложу 2 пакета — минимальный запуск и вариант “чтобы выглядело и продавало”?
@@ -157,9 +198,10 @@ app.post('/api/chat', chatLimiter, async (req, res) => {
     const { messages } = req.body;
     console.log('Incoming messages count:', messages ? messages.length : 0);
 
-    if (!PERPLEXITY_API_KEY) {
-        console.error('API Key Missing!');
-        return res.status(500).json({ error: 'API key not configured' });
+    const configError = getGroqConfigError();
+    if (configError) {
+        console.error(configError);
+        return res.status(500).json({ error: configError });
     }
 
     try {
@@ -213,20 +255,20 @@ app.post('/api/chat', chatLimiter, async (req, res) => {
         res.setHeader('Cache-Control', 'no-cache');
         res.setHeader('Connection', 'keep-alive');
 
-        const response = await axios.post('https://api.perplexity.ai/chat/completions', {
-            model: 'sonar',
+        const response = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
+            model: 'llama-3.3-70b-versatile',
             messages: [
                 { role: 'system', content: AZIM_SYSTEM_PROMPT },
                 ...validMessages
             ],
             temperature: 0.7,
-            stream: true // ENABLE STREAMING
+            stream: true
         }, {
             headers: {
-                'Authorization': `Bearer ${PERPLEXITY_API_KEY.trim()}`,
+                'Authorization': `Bearer ${GROQ_API_KEY.trim()}`,
                 'Content-Type': 'application/json'
             },
-            responseType: 'stream' // Axios must know we expect a stream
+            responseType: 'stream'
         });
 
         let fullAiResponse = "";
@@ -271,18 +313,18 @@ app.post('/api/chat', chatLimiter, async (req, res) => {
         });
 
     } catch (error) {
-        console.error('API Error:', error.response?.data || error.message);
+        const errorMessage = getGroqApiErrorMessage(error);
+        console.error('API Error:', errorMessage);
         // If headers sent, we can't send JSON error, just end.
         if (!res.headersSent) {
-            const errorMessage = error.response?.data?.error?.message || error.message || 'Unknown API Error';
-            res.status(500).json({ error: errorMessage });
+            res.status(error.response?.status || 500).json({ error: errorMessage });
         } else {
             res.end();
         }
     }
 });
 
-app.get('*', (req, res) => {
+app.use((req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
