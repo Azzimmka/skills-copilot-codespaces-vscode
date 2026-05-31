@@ -1,21 +1,3 @@
-// Lenis smooth scroll
-const lenis = new Lenis({
-	duration: 1.2,
-	easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-	orientation: 'vertical',
-	gestureOrientation: 'vertical',
-	smoothWheel: true,
-	wheelMultiplier: 0.8,
-	touchMultiplier: 1.5,
-	infinite: false,
-});
-
-function raf(time) {
-	lenis.raf(time);
-	requestAnimationFrame(raf);
-}
-requestAnimationFrame(raf);
-
 const translations = {
 	ru: {
 		nav_about: "Обо мне",
@@ -137,9 +119,10 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 		const target = document.querySelector(href);
 		if (target) {
 			e.preventDefault();
-			lenis.scrollTo(target, {
-				offset: -80, // отступ от верха (высота header)
-				duration: 1.2
+			const offsetTop = target.getBoundingClientRect().top + window.scrollY - 80;
+			window.scrollTo({
+				top: offsetTop,
+				behavior: 'smooth'
 			});
 		}
 	});
@@ -147,19 +130,30 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 
 const revealElements = document.querySelectorAll(".reveal");
 
-const observer = new IntersectionObserver(
-	(entries) => {
-		entries.forEach((entry) => {
-			if (entry.isIntersecting) {
-				entry.target.classList.add("is-visible");
-				observer.unobserve(entry.target);
-			}
-		});
-	},
-	{ threshold: 0.2 }
-);
+if ("IntersectionObserver" in window) {
+	const observer = new IntersectionObserver(
+		(entries) => {
+			entries.forEach((entry) => {
+				if (entry.isIntersecting) {
+					entry.target.classList.add("is-visible");
+					observer.unobserve(entry.target);
+				}
+			});
+		},
+		{ rootMargin: "0px 0px -10% 0px", threshold: 0.05 }
+	);
 
-revealElements.forEach((el) => observer.observe(el));
+	revealElements.forEach((el) => {
+		const rect = el.getBoundingClientRect();
+		if (rect.top < window.innerHeight * 0.9) {
+			el.classList.add("is-visible");
+		}
+		observer.observe(el);
+	});
+	document.documentElement.classList.add("reveal-ready");
+} else {
+	revealElements.forEach((el) => el.classList.add("is-visible"));
+}
 
 const updateProgress = () => {
 	const scrollTop = window.scrollY;
@@ -177,74 +171,82 @@ updateProgress();
 
 // High-performance Canvas Cursor
 const canvas = document.getElementById('cursorCanvas');
-const ctx = canvas.getContext('2d');
-let particles = [];
+const cursorEnabled = canvas
+	&& window.matchMedia('(pointer: fine)').matches
+	&& !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-const resizeCanvas = () => {
-	canvas.width = window.innerWidth;
-	canvas.height = window.innerHeight;
-};
+if (cursorEnabled) {
+	const ctx = canvas.getContext('2d');
+	let particles = [];
 
-window.addEventListener('resize', resizeCanvas);
-resizeCanvas();
+	const resizeCanvas = () => {
+		canvas.width = window.innerWidth;
+		canvas.height = window.innerHeight;
+	};
 
-class Particle {
-	constructor(x, y) {
-		this.x = x;
-		this.y = y;
-		this.size = Math.random() * 6 + 2;
-		this.speedX = Math.random() * 1 - 0.5;
-		this.speedY = Math.random() * 1 - 0.5;
-		this.life = 1;
-		this.decay = Math.random() * 0.02 + 0.01;
-	}
+	window.addEventListener('resize', resizeCanvas);
+	resizeCanvas();
 
-	update() {
-		this.x += this.speedX;
-		this.y += this.speedY;
-		this.life -= this.decay;
-		if (this.size > 0.1) this.size -= 0.05;
-	}
+	class Particle {
+		constructor(x, y) {
+			this.x = x;
+			this.y = y;
+			this.size = Math.random() * 6 + 2;
+			this.speedX = Math.random() * 1 - 0.5;
+			this.speedY = Math.random() * 1 - 0.5;
+			this.life = 1;
+			this.decay = Math.random() * 0.02 + 0.01;
+		}
 
-	draw() {
-		const color = getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#171717';
-		ctx.fillStyle = color;
-		ctx.globalAlpha = Math.max(0, this.life * 0.5);
-		ctx.beginPath();
-		ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-		ctx.fill();
-	}
-}
+		update() {
+			this.x += this.speedX;
+			this.y += this.speedY;
+			this.life -= this.decay;
+			if (this.size > 0.1) this.size -= 0.05;
+		}
 
-const animateParticles = () => {
-	ctx.clearRect(0, 0, canvas.width, canvas.height);
-	for (let i = 0; i < particles.length; i++) {
-		particles[i].update();
-		particles[i].draw();
-		if (particles[i].life <= 0) {
-			particles.splice(i, 1);
-			i--;
+		draw() {
+			const color = getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#171717';
+			ctx.fillStyle = color;
+			ctx.globalAlpha = Math.max(0, this.life * 0.5);
+			ctx.beginPath();
+			ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+			ctx.fill();
 		}
 	}
-	requestAnimationFrame(animateParticles);
-};
 
-animateParticles();
+	const animateParticles = () => {
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+		for (let i = 0; i < particles.length; i++) {
+			particles[i].update();
+			particles[i].draw();
+			if (particles[i].life <= 0) {
+				particles.splice(i, 1);
+				i--;
+			}
+		}
+		requestAnimationFrame(animateParticles);
+	};
 
-let lastMouseX = 0;
-let lastMouseY = 0;
+	animateParticles();
 
-document.addEventListener('mousemove', (e) => {
-	const dx = e.clientX - lastMouseX;
-	const dy = e.clientY - lastMouseY;
-	const distance = Math.sqrt(dx * dx + dy * dy);
+	let lastMouseX = 0;
+	let lastMouseY = 0;
 
-	if (distance > 10) {
-		particles.push(new Particle(e.clientX, e.clientY));
-		lastMouseX = e.clientX;
-		lastMouseY = e.clientY;
-	}
-});
+	document.addEventListener('mousemove', (e) => {
+		const dx = e.clientX - lastMouseX;
+		const dy = e.clientY - lastMouseY;
+		const distance = Math.sqrt(dx * dx + dy * dy);
+
+		if (distance > 10) {
+			particles.push(new Particle(e.clientX, e.clientY));
+			lastMouseX = e.clientX;
+			lastMouseY = e.clientY;
+		}
+	});
+} else {
+	canvas?.remove();
+}
 
 
 // Contact Modal - появляется через 6 секунд
@@ -476,50 +478,45 @@ chatExpand?.addEventListener('click', (e) => {
 	}
 });
 
-// Configure Marked with PrismJS highlighting
-const renderer = new marked.Renderer();
+const escapeHTML = (value) => String(value)
+	.replace(/&/g, "&amp;")
+	.replace(/</g, "&lt;")
+	.replace(/>/g, "&gt;")
+	.replace(/"/g, "&quot;")
+	.replace(/'/g, "&#039;");
 
-// Custom code block renderer with copy button (Notion-style)
-renderer.code = (code, lang) => {
-	const language = lang || 'plaintext';
-	let highlighted;
-
-	try {
-		highlighted = Prism.highlight(code, Prism.languages[language] || Prism.languages.javascript, language);
-	} catch (e) {
-		highlighted = code;
-	}
-
-	return `
-        <div class="code-block" data-lang="${language}">
-            <div class="code-block__header">
-                <span class="code-block__lang">${language}</span>
-                <button class="code-block__copy" onclick="copyCode(this)">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
-                        <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
-                    </svg>
-                    <span>Copy</span>
-                </button>
-            </div>
-            <pre class="language-${language}"><code>${highlighted}</code></pre>
-        </div>`;
-};
-
-marked.setOptions({
-	renderer: renderer,
-	breaks: true,
-	gfm: true
-});
+const renderCodeBlock = (code, lang = "plaintext") => `
+	<div class="code-block" data-lang="${escapeHTML(lang)}">
+		<div class="code-block__header">
+			<span class="code-block__lang">${escapeHTML(lang)}</span>
+			<button class="code-block__copy" onclick="copyCode(this)">
+				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+					<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+					<rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+				</svg>
+				<span>Copy</span>
+			</button>
+		</div>
+		<pre><code>${escapeHTML(code)}</code></pre>
+	</div>`;
 
 const markdownToHTML = (text) => {
-	// Handle unclosed triple backticks for live streaming
-	let processedText = text;
-	const backtickCount = (processedText.match(/```/g) || []).length;
-	if (backtickCount % 2 !== 0) {
-		processedText += '\n```';
-	}
-	return marked.parse(processedText);
+	const codeBlocks = [];
+	const withTokens = String(text).replace(/```(\w+)?\n?([\s\S]*?)```/g, (_, lang, code) => {
+		const token = `@@CODE_BLOCK_${codeBlocks.length}@@`;
+		codeBlocks.push(renderCodeBlock(code.trim(), lang || "plaintext"));
+		return token;
+	});
+
+	const html = escapeHTML(withTokens)
+		.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+		.split(/\n{2,}/)
+		.map((paragraph) => `<p>${paragraph.replace(/\n/g, "<br>")}</p>`)
+		.join("");
+
+	return codeBlocks.reduce((result, block, index) => {
+		return result.replace(`<p>@@CODE_BLOCK_${index}@@</p>`, block);
+	}, html);
 };
 
 // Global copy function
@@ -641,19 +638,8 @@ const sendMessage = async (text) => {
 							// Clean citations like [1], [1, 2] on the fly
 							const cleanText = fullText
 								.replace(/\[\d+(?:,\s*\d+)*\]/g, '')
-								.replace(/\[\d+\]/g, '');                            // Render Markdown immediately
-							if (typeof marked !== 'undefined' && typeof marked.parse === 'function') {
-								aiBubble.innerHTML = marked.parse(cleanText);
-							} else {
-								aiBubble.textContent = cleanText; // Fallback
-							}
-
-							// Highlight code blocks
-							if (window.Prism) {
-								aiBubble.querySelectorAll('pre code').forEach((block) => {
-									Prism.highlightElement(block);
-								});
-							}
+								.replace(/\[\d+\]/g, '');
+							aiBubble.innerHTML = markdownToHTML(cleanText);
 
 							// Auto-scroll to bottom as text grows
 							chatMessages.scrollTop = chatMessages.scrollHeight;

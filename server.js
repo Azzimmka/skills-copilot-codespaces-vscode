@@ -22,7 +22,17 @@ const chatLimiter = rateLimit({
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, './')));
+app.use('/assets', express.static(path.join(__dirname, 'assets'), {
+    maxAge: '30d',
+    immutable: true
+}));
+app.use(express.static(path.join(__dirname, './'), {
+    setHeaders: (res, filePath) => {
+        if (filePath.endsWith('.html')) {
+            res.setHeader('Cache-Control', 'no-cache');
+        }
+    }
+}));
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
